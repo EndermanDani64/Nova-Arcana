@@ -3,13 +3,12 @@ using UnityEngine;
 public class PlayerMovment : MonoBehaviour
 {
     [Header("Movment")]
-    public float movmentSpeed = 6f;
-
-    public float groundDrag;
+    public float movmentSpeed = 8f;
+    public float groundDrag = 6f;
 
     [Header("Ground check")]
-    public float playerHeight = 2;
-    public LayerMask ground;
+    public float playerHeight = 2f;
+    [SerializeField] private LayerMask ground;
     bool _isGrounded;
 
     [Header("References")]
@@ -36,6 +35,8 @@ public class PlayerMovment : MonoBehaviour
         _isGrounded = Physics.Raycast(transform.position, Vector3.down, playerHeight * .5f + .2f, ground);
 
         GetAndUpdateInputValues();
+
+        Debug.Log($"isGrounded = {_isGrounded}");
 
         if (_isGrounded) rigidBody.linearDamping = groundDrag;
         else rigidBody.linearDamping = 0;

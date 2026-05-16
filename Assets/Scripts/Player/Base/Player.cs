@@ -9,6 +9,7 @@ public class Player : MonoBehaviour
     [Header("Base values")]
     public bool staminaRegen;
     public float stamina { get; private set; } = 100;
+    public float health = 100; // zzz
 
     /// <summary>
     /// Addition of stamina and staminaDecrease (parameter).
