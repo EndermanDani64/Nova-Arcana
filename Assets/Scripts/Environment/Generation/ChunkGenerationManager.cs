@@ -1,13 +1,13 @@
 ﻿using NUnit.Framework;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor;
 using UnityEngine;
 
 public class ChunkGenerationManager : MonoBehaviour
 {
     public Dictionary<Vector2Int, GameObject> rooms;
     [SerializeField] private int renderDistance = 8;
+
     private void Start()
     {
         rooms = new();
@@ -32,12 +32,14 @@ public class ChunkGenerationManager : MonoBehaviour
 
                 if (rooms.Keys.Contains(currentRoomPos))
                 {
-                    rooms[currentRoomPos].GetComponent<Chunk>().LoadChunk();
+                    rooms[currentRoomPos].GetComponent<RoomNode>().LoadChunk();
                 }
                 else
                 {
-                    GameObject o = Instantiate(baseChunk, worldPos, Quaternion.identity);
-                    o.GetComponent<Chunk>().cgm = this;
+
+                    // collapse logic
+
+                    GameObject o = Instantiate(roomNodes[0], worldPos, Quaternion.identity);
 
                     rooms.Add(currentRoomPos, o);
                 }
@@ -45,6 +47,8 @@ public class ChunkGenerationManager : MonoBehaviour
         }
     }
 
-    [SerializeField] private GameObject baseChunk;
+    [SerializeField] private GameObject[] roomNodes;
+
+
     [SerializeField] private WorldTracker worldTracker;
 }
