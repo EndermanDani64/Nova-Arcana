@@ -36,8 +36,6 @@ public class PlayerMovment : MonoBehaviour
 
         GetAndUpdateInputValues();
 
-        Debug.Log($"isGrounded = {_isGrounded}");
-
         if (_isGrounded) rigidBody.linearDamping = groundDrag;
         else rigidBody.linearDamping = 0;
 

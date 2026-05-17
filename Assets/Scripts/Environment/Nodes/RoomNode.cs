@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "RoomNode", menuName = "Nodes/RoomNode")]
@@ -8,10 +9,7 @@ public class RoomNode : MonoBehaviour
     public Vector2Int NodePos;
     public GameObject Prefab;
 
-    public NodeConnection Top;
-    public NodeConnection Bottom;
-    public NodeConnection Left;
-    public NodeConnection Right;
+    public NodeConnection nodeConnection;
 
     public int NodeWidth;
     public int NodeDepth;
@@ -25,17 +23,17 @@ public class RoomNode : MonoBehaviour
         Prefab = gameObject;
     }
 
-    public void ToggleChunk()
+    public void ToggleNode()
     {
         gameObject.SetActive(!gameObject.activeSelf);
     }
-    public void LoadChunk()
+    public void LoadNode()
     {
         if (gameObject.activeSelf) return;
 
         gameObject.SetActive(true);
     }
-    public void DeloadChunk()
+    public void DeloadNode()
     {
         if (!gameObject.activeSelf) return;
 
