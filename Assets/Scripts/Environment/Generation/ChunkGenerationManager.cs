@@ -5,10 +5,11 @@ public class ChunkGenerationManager : MonoBehaviour
 {
     [SerializeField] private GameObject initialNode;
     public Dictionary<Vector2Int, GameObject> rooms;
+    public Dictionary<Vector2Int, GameObject> activeRooms;
 
     [SerializeField] private List<GameObject> _allPossibleNodes = new List<GameObject>();
 
-    [SerializeField] private int renderDistance = 8;
+    [SerializeField] private int renderDistance = 4;
 
     private Vector2Int[] offsets = new Vector2Int[]
     {
@@ -21,132 +22,123 @@ public class ChunkGenerationManager : MonoBehaviour
     private void Start()
     {
         rooms = new Dictionary<Vector2Int, GameObject>();
+        activeRooms = new Dictionary<Vector2Int, GameObject>();
         rooms.Add(new Vector2Int(0, 0), initialNode);
+        activeRooms.Add(new Vector2Int(0, 0), initialNode);
 
         ManageChunksLoading();
 
         worldTracker.playerChunkPosChanged += ManageChunksLoading;
+        worldTracker.playerChunkPosChanged += DeloadChunks;
+    }
+
+    private void DeloadChunks()
+    {
+        foreach (KeyValuePair<Vector2Int, GameObject> room in rooms)
+        {
+            GameObject g = room.Value;
+
+            //Debug.Log($"distance: {Vector3.Distance(g.transform.position, player.GetComponent<Transform>().position)}");
+
+            if (Vector3.Distance(g.transform.position, player.GetComponent<Transform>().position) > 120)
+            {
+                g.GetComponent<RoomNode>().DeloadNode();
+                activeRooms.Remove(room.Key);
+            }
+        }
     }
 
     private void ManageChunksLoading()
     {
         Vector2Int currentPlayerPos = worldTracker.playerRoomPosition;
-        int chunkLoadingQueueLength = 0;
-
-        Debug.Log("ran");
 
         for (int x = currentPlayerPos.x - renderDistance; x < currentPlayerPos.x + renderDistance; x++)
         {
             for (int y = currentPlayerPos.y - renderDistance; y < currentPlayerPos.y + renderDistance; y++)
             {
-                List<GameObject> potentionalNodes = new List<GameObject>(_allPossibleNodes);
+                Vector2Int currentPos = new Vector2Int(x, y);
 
-                for (int i = 0; i < offsets.Length; i++) // végigmegyünk az összes szomszédon
+                if (!rooms.ContainsKey(currentPos))
                 {
-                    Vector2Int neighbourPos = currentPlayerPos + (offsets[i] * chunkLoadingQueueLength);
+                    List<GameObject> potentionalNodes = new List<GameObject>(_allPossibleNodes);
 
-                    if (!rooms.ContainsKey(neighbourPos))
+                    Vector3 worldPos = new Vector3(
+                        (currentPos.x * 15) + 15,
+                        0,
+                        (currentPos.y * 15) + 15
+                    );
+
+                    for (int i = 0; i < offsets.Length; i++) // végigmegyünk az összes szomszédon
                     {
-                        switch (i)
+                        Vector2Int neighbourPos = new Vector2Int(x + offsets[i].x, y + offsets[i].y);
+
+                        if (rooms.ContainsKey(neighbourPos))
                         {
-                            case 0:
-                                PopNodes(
-                                    potentionalNodes,
-                                    rooms[currentPlayerPos].GetComponent<RoomNode>().nodeConnection.Top
-                                );
-                                break;
-                            case 1:
-                                PopNodes(
-                                    potentionalNodes,
-                                    rooms[currentPlayerPos].GetComponent<RoomNode>().nodeConnection.Bottom
-                                );
-                                break;
-                            case 2:
-                                PopNodes(
-                                    potentionalNodes,
-                                    rooms[currentPlayerPos].GetComponent<RoomNode>().nodeConnection.Right
-                                );
-                                break;
-                            case 3:
-                                PopNodes(
-                                    potentionalNodes,
-                                    rooms[currentPlayerPos].GetComponent<RoomNode>().nodeConnection.Left
-                                );
-                                break;
+                            switch (i)
+                            {
+                                case 0: // felül
+                                    PopNodes(
+                                        potentionalNodes,
+                                        rooms[neighbourPos].GetComponent<RoomNode>().nodeConnection.Top
+                                    );
+                                    break;
+                                case 1: // alul
+                                    PopNodes(
+                                        potentionalNodes,
+                                        rooms[neighbourPos].GetComponent<RoomNode>().nodeConnection.Bottom
+                                    );
+                                    break;
+                                case 2:
+                                    PopNodes(
+                                        potentionalNodes,
+                                        rooms[neighbourPos].GetComponent<RoomNode>().nodeConnection.Right
+                                    );
+                                    break;
+                                case 3:
+                                    PopNodes(
+                                        potentionalNodes,
+                                        rooms[neighbourPos].GetComponent<RoomNode>().nodeConnection.Left
+                                    );
+                                    break;
+                            }
+                            //Debug.Log($"jelen poz: {currentPos}, szomszéd pozició: {neighbourPos}, potentionalNodes = ({TEMP_Print(potentionalNodes)})", rooms[neighbourPos]);
+
+                            if (potentionalNodes.Count == 0)
+                            {
+                                potentionalNodes.Add(initialNode);
+                                continue;
+                            }
                         }
+                        else
+                        {
+                            //Debug.Log($"nem volt a szomszédos helyen senki, jelen poz: {currentPos}, szomszéd pozició: {neighbourPos}");
+                            continue;
+                        }
+                    }
 
-                        Vector3 worldPos = new Vector3(
-                            (neighbourPos.x * 15) + 15,
-                            0,
-                            (neighbourPos.y * 15) + 15
-                        );
+                    int ranIndex = Random.Range(0, potentionalNodes.Count);
 
-                        GameObject newRoom = Instantiate(potentionalNodes[Random.Range(0, potentionalNodes.Count)], worldPos, Quaternion.identity);
-                        rooms.Add(neighbourPos, newRoom);
+                    if (ranIndex < potentionalNodes.Count)
+                    {
+                        GameObject newRoom = Instantiate(potentionalNodes[ranIndex], worldPos, Quaternion.identity);
+                        rooms.Add(currentPos, newRoom);
+                        activeRooms.Add(currentPos, newRoom);
                     }
                     else
                     {
-                        rooms[neighbourPos].GetComponent<RoomNode>().LoadNode();
+                        GameObject newRoom = Instantiate(potentionalNodes[0], worldPos, Quaternion.identity);
+                        rooms.Add(currentPos, newRoom);
+                        activeRooms.Add(currentPos, newRoom);
                     }
-                }
-            }
-        }
-
-        /*while (chunkLoadingQueueLength < renderDistance)
-        {
-            List<GameObject> potentionalNodes = new List<GameObject>(_allPossibleNodes);
-
-            for (int i = 0; i < offsets.Length; i++) // végigmegyünk az összes szomszédon
-            {
-                Vector2Int neighbourPos = currentPlayerPos + (offsets[i] * chunkLoadingQueueLength);
-
-                if (!rooms.ContainsKey(neighbourPos))
-                {
-                    switch (i)
-                    {
-                        case 0:
-                            PopNodes(
-                                potentionalNodes,
-                                rooms[currentPlayerPos].GetComponent<RoomNode>().nodeConnection.Top
-                            );
-                            break;
-                        case 1:
-                            PopNodes(
-                                potentionalNodes,
-                                rooms[currentPlayerPos].GetComponent<RoomNode>().nodeConnection.Bottom
-                            );
-                            break;
-                        case 2:
-                            PopNodes(
-                                potentionalNodes,
-                                rooms[currentPlayerPos].GetComponent<RoomNode>().nodeConnection.Right
-                            );
-                            break;
-                        case 3:
-                            PopNodes(
-                                potentionalNodes,
-                                rooms[currentPlayerPos].GetComponent<RoomNode>().nodeConnection.Left
-                            );
-                            break;
-                    }
-
-                    Vector3 worldPos = new Vector3(
-                        (neighbourPos.x * 15) + 15,
-                        0,
-                        (neighbourPos.y * 15) + 15
-                    );
-
-                    GameObject newRoom = Instantiate(potentionalNodes[Random.Range(0, potentionalNodes.Count)], worldPos, Quaternion.identity);
-                    rooms.Add(neighbourPos, newRoom);
+                    //Debug.Log($"GENERÁLVA poz: {currentPos}", rooms[currentPos]);
                 }
                 else
                 {
-                    rooms[neighbourPos].GetComponent<RoomNode>().LoadNode();
+                    rooms[currentPos].GetComponent<RoomNode>().LoadNode();
+                    if (!activeRooms.ContainsKey(currentPos)) activeRooms.Add(currentPos, rooms[currentPos]);
                 }
             }
-
-            chunkLoadingQueueLength++;
-        }*/
+        }
     }
 
     private void PopNodes(List<GameObject> potentionalNodes, List<GameObject> validNodes)
@@ -159,6 +151,17 @@ public class ChunkGenerationManager : MonoBehaviour
             }
         }
     }
-    
+
+    private string TEMP_Print(List<GameObject> o)
+    {
+        string final = "";
+        foreach (GameObject e in o)
+        {
+            final += $"{e.name}, ";
+        }
+        return final;
+    }
+
+    [SerializeField] private Player player;
     [SerializeField] private WorldTracker worldTracker;
 }
