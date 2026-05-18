@@ -1,9 +1,5 @@
-using NUnit.Framework;
-using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "RoomNode", menuName = "Nodes/RoomNode")]
-[System.Serializable]
 public class RoomNode : MonoBehaviour
 {
     public Vector2Int NodePos;

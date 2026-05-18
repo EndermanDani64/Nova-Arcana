@@ -38,8 +38,6 @@ public class ChunkGenerationManager : MonoBehaviour
         {
             GameObject g = room.Value;
 
-            //Debug.Log($"distance: {Vector3.Distance(g.transform.position, player.GetComponent<Transform>().position)}");
-
             if (Vector3.Distance(g.transform.position, player.GetComponent<Transform>().position) > 120)
             {
                 g.GetComponent<RoomNode>().DeloadNode();
@@ -150,16 +148,6 @@ public class ChunkGenerationManager : MonoBehaviour
                 potentionalNodes.RemoveAt(i);
             }
         }
-    }
-
-    private string TEMP_Print(List<GameObject> o)
-    {
-        string final = "";
-        foreach (GameObject e in o)
-        {
-            final += $"{e.name}, ";
-        }
-        return final;
     }
 
     [SerializeField] private Player player;

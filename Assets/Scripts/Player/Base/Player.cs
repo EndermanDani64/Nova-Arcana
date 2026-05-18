@@ -1,8 +1,5 @@
 using TMPro;
-using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.UIElements;
 
 public class Player : MonoBehaviour
 {
