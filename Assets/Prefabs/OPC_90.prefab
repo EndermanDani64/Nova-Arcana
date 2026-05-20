@@ -370,7 +370,7 @@ GameObject:
   - component: {fileID: 6022711237455011034}
   - component: {fileID: 2682953308768971699}
   m_Layer: 7
-  m_Name: OPENCORNER_90
+  m_Name: OPC_90
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
