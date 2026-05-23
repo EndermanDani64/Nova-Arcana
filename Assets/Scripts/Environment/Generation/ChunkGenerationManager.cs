@@ -23,8 +23,8 @@ public class ChunkGenerationManager : MonoBehaviour
     {
         rooms = new Dictionary<Vector2Int, GameObject>();
         activeRooms = new Dictionary<Vector2Int, GameObject>();
-        rooms.Add(new Vector2Int(0, 0), initialNode);
-        activeRooms.Add(new Vector2Int(0, 0), initialNode);
+        //rooms.Add(new Vector2Int(0, 0), initialNode);
+        //activeRooms.Add(new Vector2Int(0, 0), initialNode);
 
         ManageChunksLoading();
 
@@ -114,9 +114,9 @@ public class ChunkGenerationManager : MonoBehaviour
                         }
                     }
 
-                    int ranIndex = Random.Range(0, potentionalNodes.Count);
+                    int ranIndex = Random.Range(0, potentionalNodes.Count - 1);
 
-                    if (ranIndex < potentionalNodes.Count)
+                    if (ranIndex <= potentionalNodes.Count)
                     {
                         GameObject newRoom = Instantiate(potentionalNodes[ranIndex], worldPos, Quaternion.identity);
                         rooms.Add(currentPos, newRoom);
