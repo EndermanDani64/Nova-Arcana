@@ -199,6 +199,8 @@ MonoBehaviour:
   nodeConnection: {fileID: 2308619988366482610}
   NodeWidth: 1
   NodeDepth: 1
+  lights:
+  - {fileID: 5883210150265380595}
   origin: {fileID: 5154901567817637085}
 --- !u!1 &3306721621275884691
 GameObject:

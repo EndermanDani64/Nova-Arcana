@@ -27,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 520033317970447472}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071057, y: -0, z: -0, w: 0.7071079}
-  m_LocalPosition: {x: -0.33333334, y: 5, z: 0.33333334}
+  m_LocalPosition: {x: -0.33333334, y: 7, z: 0.33333334}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -43,11 +43,11 @@ Light:
   m_Enabled: 1
   serializedVersion: 13
   m_Type: 0
-  m_Color: {r: 1, g: 0.9060232, b: 0.8254717, a: 1}
-  m_Intensity: 6.7
-  m_Range: 14.41
+  m_Color: {r: 1, g: 0.87697077, b: 0.43867922, a: 1}
+  m_Intensity: 36.3
+  m_Range: 16.2
   m_SpotAngle: 179
-  m_InnerSpotAngle: 115.2779
+  m_InnerSpotAngle: 125.15169
   m_CookieSize2D: {x: 0.5, y: 0.5}
   m_Shadows:
     m_Type: 0
@@ -620,6 +620,8 @@ MonoBehaviour:
   nodeConnection: {fileID: 8062471623948000961}
   NodeWidth: 1
   NodeDepth: 1
+  lights:
+  - {fileID: 5875178900795481816}
   origin: {fileID: 6410456346938137249}
 --- !u!1 &1957630398760596431
 GameObject:
@@ -1001,7 +1003,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: c22777d6e868e4f2fb421913386b154e, type: 2}
+  - {fileID: 2100000, guid: c3186b4e3b6ed7449a4307cf442fecb6, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1357,7 +1359,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: c22777d6e868e4f2fb421913386b154e, type: 2}
+  - {fileID: 2100000, guid: c3186b4e3b6ed7449a4307cf442fecb6, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
