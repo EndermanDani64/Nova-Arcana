@@ -1,5 +1,7 @@
+using JetBrains.Annotations;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -17,247 +19,72 @@ public class ACGen : MonoBehaviour
 
 	public Dictionary<Vector2Int, CellType> map;
 	public Dictionary<Vector2Int, GameObject> world;
-	public Dictionary<Vector2Int, bool> visited; // added
 
 	public int size = 50;
 
-	[SerializeField] float STOP_COLLISION_PROBABILITY = 0.5f;
-	[SerializeField] float randomFactor = 1f;
-	[SerializeField] float randomStopFactor = .3f;
-	[SerializeField] float randomRoomFactor = .1f;
-	[SerializeField] int randomRoomMinSize = 2;
-	[SerializeField] int randomRoomMaxSize = 4;
+    [Space]
+
+    [SerializeField] int labirynthCount = 100;
+	[SerializeField] int roomCount = 10;
+	[SerializeField] int wallBlockCount = 15;
+
+    [Space]
+
+	[SerializeField] float STOP_COLLISION_PROBABILITY = 0.005f;
+	[SerializeField] float mapFillPrecentage = 0f;
+	[SerializeField] float randomFactorForDoors = 1f;
+	int randomRoomMinSize = 4;
+	int randomRoomMaxSize = 10;
 
 	void Start()
 	{
 		map = new();
 		world = new();
-		visited = new(); // added
-		GenerateMap(1);
-	}
 
-	private void Update()
+		lastNum1 = STOP_COLLISION_PROBABILITY;
+		lastNum2 = mapFillPrecentage;
+		lastNum3 = randomFactorForDoors;
+
+        GenerateMap(labirynthCount);
+		GenerateRooms(roomCount);
+		GenerateWallBlocks(wallBlockCount);
+    }
+
+	float lastNum1 = 0;
+	float lastNum2 = 0;
+	float lastNum3 = 0;
+
+    private void Update()
 	{
-		/*if (lastSize != size)
+		if (lastNum1 != STOP_COLLISION_PROBABILITY || lastNum2 != mapFillPrecentage || lastNum3 != randomFactorForDoors)
 		{
-			GenerateMap(15);
-		}*/
+			ClearMap();
 
-		/*Debug.Log($"map len: {map.Count} | world len: {world.Count}");
+            GenerateMap(labirynthCount);
+            GenerateRooms(roomCount);
+            GenerateWallBlocks(wallBlockCount);
 
-		for (int f = 0; f < labirynth; f++)
-		{
-			int randPosIndex = Random.Range(0, map.Count);
-			Vector2Int parentPos = map.ElementAt(randPosIndex).Key;
-
-			if (visited.ContainsKey(parentPos)) // added
-			{
-				if (visited[parentPos]) continue;
-			}
-			
-			map[parentPos] = CellType.Empty;
-			Destroy(world[parentPos]); // GENERATE FLOOR!!! IF WALKABLE/ EMPTY
-
-			Dictionary<Vector2Int, Vector2Int> frontier = new();
-
-			foreach (Vector2Int childP in GetNeighbours(parentPos))
-			{
-				if (frontier.ContainsKey(childP)) continue;
-				frontier.Add(childP, parentPos);
-			}
-
-			while (frontier.Count > 0)
-			{
-				int randChoice = Random.Range(0, frontier.Count - 1);
-				Vector2Int childPos = frontier.ElementAt(randChoice).Key; // x, y rand | line 71
-
-				if (map[childPos] == CellType.Wall)
-				{
-					map[childPos] = CellType.Empty;
-					Destroy(world[childPos]);
-					
-					Vector2Int doorwayPos = new();
-
-					if (frontier[childPos].y > childPos.y && frontier[childPos].x == childPos.x)
-					{
-						doorwayPos = new Vector2Int(childPos.x, childPos.y + 1);
-
-						if (map[doorwayPos] == CellType.Wall && Random.value < randomFactor)
-						{
-							map[doorwayPos] = CellType.Empty;
-							Destroy(world[doorwayPos]);
-						}
-					}
-					else if (frontier[childPos].y < childPos.y && frontier[childPos].x == childPos.x)
-					{
-						doorwayPos = new Vector2Int(childPos.x, childPos.y - 1);
-
-						if (map[doorwayPos] == CellType.Wall && Random.value < randomFactor)
-						{
-							map[doorwayPos] = CellType.Empty;
-							Destroy(world[doorwayPos]);
-						}
-					}
-					else if (frontier[childPos].x > childPos.x && frontier[childPos].y == childPos.y)
-					{
-						doorwayPos = new Vector2Int(childPos.x + 1, childPos.y);
-
-						if (map[doorwayPos] == CellType.Wall && Random.value < randomFactor)
-						{
-							map[doorwayPos] = CellType.Empty;
-							Destroy(world[doorwayPos]);
-						}
-					}
-					else if (frontier[childPos].x < childPos.x && frontier[childPos].y == childPos.y)
-					{
-						doorwayPos = new Vector2Int(childPos.x - 1, childPos.y);
-
-						if (map[doorwayPos] == CellType.Wall && Random.value < randomFactor)
-						{
-							map[doorwayPos] = CellType.Empty;
-							Destroy(world[doorwayPos]);
-						}
-					}
-
-					//if (Random.value < STOP_COLLISION_PROBABILITY) break;
-
-					foreach (Vector2Int childP in GetNeighbours(childPos))
-					{
-						Debug.Log("update");
-						if (frontier.ContainsKey(childP)) continue;
-						frontier.Add(childP, childPos); // childPos = parentPos
-					}
-
-					frontier.Remove(childPos);
-				}
-			}
-		}*/
+            lastNum1 = STOP_COLLISION_PROBABILITY;
+            lastNum2 = mapFillPrecentage;
+            lastNum3 = randomFactorForDoors;
+        }
 	}
 
 	private void GenerateMap(int labirynth)
 	{
 		FillWithWalls();
-
+		List<Vector2Int> visitedCells = new();
 		bool firstIteration = true;
-
-		/*for (int f = 0; f < labirynth; f++)
-		{
-			//int randPosIndex = Random.Range(0, map.Count - 1);
-			//Vector2Int startPos = map.ElementAt(randPosIndex).Key;
-
-			int randX = Random.Range(tracker.playerRoomPosition.x - (size / 2), tracker.playerRoomPosition.x + (size / 2));
-			int randZ = Random.Range(tracker.playerRoomPosition.y - (size / 2), tracker.playerRoomPosition.y + (size / 2));
-			Vector2Int startPos = new Vector2Int(randX, randZ);
-
-			List<Vector2Int> frontier = new();
-
-			frontier.Add(startPos);
-			//Dictionary<Vector2Int, Vector2Int> frontier = new() { parentPos };
-
-			while (frontier.Count > 0)
-			{
-				foreach (Vector2Int childP in GetNeighbours(startPos))
-				{
-					if (visited[childP]) continue;
-
-					if (!frontier.Contains(childP)) frontier.Add(childP);
-				}
-
-				int randPosIndex = Random.Range(0, frontier.Count - 1);
-				Vector2Int parentPos = frontier[randPosIndex];
-
-				if (!visited[parentPos]) visited[parentPos] = true;
-				frontier.Remove(parentPos);
-
-				map[parentPos] = CellType.Empty;
-				Destroy(world[parentPos]); // GENERATE FLOOR!!! IF WALKABLE/ EMPTY
-
-				if (Random.value < STOP_COLLISION_PROBABILITY)
-				{
-					//frontier.Add(nextCell);
-					//map[nextCell] = CellType.Empty;
-					//Destroy(world[nextCell]);
-					continue;
-				}
-
-				List<Vector2Int> neighbors = new();
-
-				foreach (Vector2Int childP in GetNeighbours(parentPos))
-				{
-					if (visited[childP]) continue;
-
-					neighbors.Add(childP);
-					if (!frontier.Contains(childP)) frontier.Add(childP);
-				}
-
-				if (neighbors.Count > 0)
-				{
-					randPosIndex = Random.Range(0, neighbors.Count - 1);
-					Vector2Int nextCell = neighbors[randPosIndex];
-
-
-
-					if (nextCell.y < parentPos.y && nextCell.x == parentPos.x)
-					{
-						Vector2Int doorwayPos = new Vector2Int(parentPos.x, parentPos.y - 1);
-
-						if (map[doorwayPos] == CellType.Wall && Random.value < randomFactor)
-						{
-							//frontier.Add(nextCell);
-							map[doorwayPos] = CellType.Empty;
-							Destroy(world[doorwayPos]);
-						}
-					}
-					else if (nextCell.y > parentPos.y && nextCell.x == parentPos.x)
-					{
-						Vector2Int doorwayPos = new Vector2Int(parentPos.x, parentPos.y + 1);
-
-						if (map[doorwayPos] == CellType.Wall && Random.value < randomFactor)
-						{
-							//frontier.Add(nextCell);
-							map[doorwayPos] = CellType.Empty;
-							Destroy(world[doorwayPos]);
-						}
-					}
-					else if (nextCell.y == parentPos.y && nextCell.x < parentPos.x)
-					{
-						Vector2Int doorwayPos = new Vector2Int(parentPos.x - 1, parentPos.y);
-
-						if (map[doorwayPos] == CellType.Wall && Random.value < randomFactor)
-						{
-							//frontier.Add(nextCell);
-							map[doorwayPos] = CellType.Empty;
-							Destroy(world[doorwayPos]);
-						}
-					}
-					else if (nextCell.y == parentPos.y && nextCell.x > parentPos.x)
-					{
-						Vector2Int doorwayPos = new Vector2Int(parentPos.x + 1, parentPos.y);
-
-						if (map[doorwayPos] == CellType.Wall && Random.value < randomFactor)
-						{
-							//frontier.Add(nextCell);
-							map[doorwayPos] = CellType.Empty;
-							Destroy(world[doorwayPos]);
-						}
-					}
-				}
-
-				//frontier.AddRange(neighbors);
-			}
-		}*/
 
 		for (int f = 0; f < labirynth; f++)
 		{
 			int randPosIndex = Random.Range(0, map.Count);
 			Vector2Int parentPos = map.ElementAt(randPosIndex).Key;
 
-			if (visited.ContainsKey(parentPos)) // added
-			{
-				if (visited[parentPos]) continue;
-			}
+            if (!visitedCells.Contains(parentPos))
+                visitedCells.Add(parentPos);
 
-			map[parentPos] = CellType.Empty;
+            map[parentPos] = CellType.Empty;
 			Destroy(world[parentPos]); // GENERATE FLOOR!!! IF WALKABLE/ EMPTY
 
 			Dictionary<Vector2Int, Vector2Int> frontier = new();
@@ -268,14 +95,15 @@ public class ACGen : MonoBehaviour
 				frontier.Add(childP, parentPos);
 			}
 
-			while (frontier.Count > 0)
+			while (/*visitedCells.Count / (size * size) < mapFillPrecentage*/ frontier.Count > 0)
 			{
 				int randChoice = Random.Range(0, frontier.Count - 1);
 				Vector2Int childPos = frontier.ElementAt(randChoice).Key; // x, y rand | line 71
 
 				if (Random.value < STOP_COLLISION_PROBABILITY)
 				{
-					frontier.Remove(childPos);
+					//frontier.Remove(childPos);
+					frontier.Clear();
 					continue;
 				}
 
@@ -290,27 +118,7 @@ public class ACGen : MonoBehaviour
 					{
 						doorwayPos = new Vector2Int(childPos.x, childPos.y + 1);
 
-						if (Random.value < randomRoomFactor)
-						{
-							int roomSizeX = Random.Range(randomRoomMinSize, randomRoomMaxSize);
-                            int roomSizeY = Random.Range(randomRoomMinSize, randomRoomMaxSize);
-
-							for (int roomX = doorwayPos.x - (roomSizeX / 2); roomX < doorwayPos.x + (roomSizeX / 2); roomX++)
-							{
-                                for (int roomY = doorwayPos.y - (roomSizeY / 2); roomY < doorwayPos.y + (roomSizeY / 2); roomY++)
-                                {
-									Vector2Int roomPos = new Vector2Int(roomX, roomY);
-
-									if (!world.ContainsKey(roomPos)) continue;
-
-                                    map[roomPos] = CellType.Empty;
-                                    Destroy(world[roomPos]);
-                                }
-                            }
-							continue;
-						}
-
-						if (map[doorwayPos] == CellType.Wall && Random.value < randomFactor)
+						if (map[doorwayPos] == CellType.Wall && Random.value < randomFactorForDoors)
 						{
 							map[doorwayPos] = CellType.Empty;
 							Destroy(world[doorwayPos]);
@@ -320,27 +128,7 @@ public class ACGen : MonoBehaviour
 					{
 						doorwayPos = new Vector2Int(childPos.x, childPos.y - 1);
 
-                        if (Random.value < randomRoomFactor)
-                        {
-                            int roomSizeX = Random.Range(randomRoomMinSize, randomRoomMaxSize);
-                            int roomSizeY = Random.Range(randomRoomMinSize, randomRoomMaxSize);
-
-                            for (int roomX = doorwayPos.x - (roomSizeX / 2); roomX < doorwayPos.x + (roomSizeX / 2); roomX++)
-                            {
-                                for (int roomY = doorwayPos.y - (roomSizeY / 2); roomY < doorwayPos.y + (roomSizeY / 2); roomY++)
-                                {
-                                    Vector2Int roomPos = new Vector2Int(roomX, roomY);
-
-                                    if (!world.ContainsKey(roomPos)) continue;
-
-                                    map[roomPos] = CellType.Empty;
-                                    Destroy(world[roomPos]);
-                                }
-                            }
-                            continue;
-                        }
-
-                        if (map[doorwayPos] == CellType.Wall && Random.value < randomFactor)
+                        if (map[doorwayPos] == CellType.Wall && Random.value < randomFactorForDoors)
 						{
 							map[doorwayPos] = CellType.Empty;
 							Destroy(world[doorwayPos]);
@@ -350,27 +138,7 @@ public class ACGen : MonoBehaviour
 					{
 						doorwayPos = new Vector2Int(childPos.x + 1, childPos.y);
 
-                        if (Random.value < randomRoomFactor)
-                        {
-                            int roomSizeX = Random.Range(randomRoomMinSize, randomRoomMaxSize);
-                            int roomSizeY = Random.Range(randomRoomMinSize, randomRoomMaxSize);
-
-                            for (int roomX = doorwayPos.x - (roomSizeX / 2); roomX < doorwayPos.x + (roomSizeX / 2); roomX++)
-                            {
-                                for (int roomY = doorwayPos.y - (roomSizeY / 2); roomY < doorwayPos.y + (roomSizeY / 2); roomY++)
-                                {
-                                    Vector2Int roomPos = new Vector2Int(roomX, roomY);
-
-                                    if (!world.ContainsKey(roomPos)) continue;
-
-                                    map[roomPos] = CellType.Empty;
-                                    Destroy(world[roomPos]);
-                                }
-                            }
-                            continue;
-                        }
-
-                        if (map[doorwayPos] == CellType.Wall && Random.value < randomFactor)
+                        if (map[doorwayPos] == CellType.Wall && Random.value < randomFactorForDoors)
 						{
 							map[doorwayPos] = CellType.Empty;
 							Destroy(world[doorwayPos]);
@@ -380,41 +148,30 @@ public class ACGen : MonoBehaviour
 					{
 						doorwayPos = new Vector2Int(childPos.x - 1, childPos.y);
 
-                        if (Random.value < randomRoomFactor)
-                        {
-                            int roomSizeX = Random.Range(randomRoomMinSize, randomRoomMaxSize);
-                            int roomSizeY = Random.Range(randomRoomMinSize, randomRoomMaxSize);
-
-                            for (int roomX = doorwayPos.x - (roomSizeX / 2); roomX < doorwayPos.x + (roomSizeX / 2); roomX++)
-                            {
-                                for (int roomY = doorwayPos.y - (roomSizeY / 2); roomY < doorwayPos.y + (roomSizeY / 2); roomY++)
-                                {
-                                    Vector2Int roomPos = new Vector2Int(roomX, roomY);
-
-                                    if (!world.ContainsKey(roomPos)) continue;
-
-                                    map[roomPos] = CellType.Empty;
-                                    Destroy(world[roomPos]);
-                                }
-                            }
-                            continue;
-                        }
-
-                        if (map[doorwayPos] == CellType.Wall && Random.value < randomFactor)
+                        if (map[doorwayPos] == CellType.Wall && Random.value < randomFactorForDoors)
 						{
 							map[doorwayPos] = CellType.Empty;
 							Destroy(world[doorwayPos]);
 						}
 					}
 
-					if (Random.value < randomStopFactor && !firstIteration) continue;
+					List<Vector2Int> neighborList = new();
 
 					foreach (Vector2Int childP in GetNeighbours(childPos))
 					{
-						Debug.Log("update");
-						if (frontier.ContainsKey(childP)) continue;
-						frontier.Add(childP, childPos); // childPos = parentPos
-					}
+						if (neighborList.Contains(childP)) continue;
+						neighborList.Add(childP);
+                        //frontier.Add(childP, childPos); // childPos = parentPos
+                    }
+
+					int randomIndex = Random.Range(0, neighborList.Count - 1);
+
+					Debug.Log($"neigbourList count: {neighborList.Count} | randomIndex: {randomIndex}");
+
+                    if (neighborList.Count > 0 && !frontier.ContainsKey(neighborList[randomIndex]))
+                    {
+                        frontier.Add(neighborList[randomIndex], childPos);
+                    }
 
 					frontier.Remove(childPos);
 					firstIteration = false;
@@ -422,7 +179,78 @@ public class ACGen : MonoBehaviour
 			}
 		}
 	}
-	private void FillWithWalls()
+
+	private void GenerateRooms(int roomsCount)
+	{
+		List<Vector2Int> emptyParts = new();
+
+		foreach (KeyValuePair<Vector2Int, CellType> pair in map)
+		{
+			if (pair.Value != CellType.Empty || emptyParts.Contains(pair.Key)) continue;
+			emptyParts.Add(pair.Key);
+		}
+
+		for (int f = 0; f < roomsCount; f++)
+		{
+            Vector2Int centerPos = emptyParts[Random.Range(0, emptyParts.Count - 1)];
+
+            int roomSizeX = Random.Range(randomRoomMinSize, randomRoomMaxSize);
+            int roomSizeY = Random.Range(randomRoomMinSize, randomRoomMaxSize);
+
+            for (int roomX = centerPos.x - (Mathf.RoundToInt(roomSizeX / 2)); roomX < centerPos.x + (Mathf.RoundToInt(roomSizeX / 2)); roomX++)
+            {
+                for (int roomY = centerPos.y - (Mathf.RoundToInt(roomSizeY / 2)); roomY < centerPos.y + (Mathf.RoundToInt(roomSizeY / 2)); roomY++)
+                {
+                    Vector2Int roomPos = new Vector2Int(roomX, roomY);
+
+                    if (!world.ContainsKey(roomPos)) continue;
+
+                    map[roomPos] = CellType.Empty;
+                    Destroy(world[roomPos]);
+                }
+            }
+        }
+    }
+
+    private void GenerateWallBlocks(int wallBlocksCount)
+    {
+        List<Vector2Int> emptyParts = new();
+
+        foreach (KeyValuePair<Vector2Int, CellType> pair in map)
+        {
+            if (pair.Value != CellType.Wall || emptyParts.Contains(pair.Key)) continue;
+            emptyParts.Add(pair.Key);
+        }
+
+        for (int f = 0; f < wallBlocksCount; f++)
+        {
+            Vector2Int centerPos = emptyParts[Random.Range(0, emptyParts.Count - 1)];
+
+            int roomSizeX = Random.Range(randomRoomMinSize, randomRoomMaxSize);
+            int roomSizeY = Random.Range(randomRoomMinSize, randomRoomMaxSize);
+
+            for (int roomX = centerPos.x - (Mathf.RoundToInt(roomSizeX / 2)); roomX < centerPos.x + (Mathf.RoundToInt(roomSizeX / 2)); roomX++)
+            {
+                for (int roomY = centerPos.y - (Mathf.RoundToInt(roomSizeY / 2)); roomY < centerPos.y + (Mathf.RoundToInt(roomSizeY / 2)); roomY++)
+                {
+                    Vector2Int roomPos = new Vector2Int(roomX, roomY);
+
+                    if (!world.ContainsKey(roomPos)) continue;
+
+                    map[roomPos] = CellType.Wall;
+					world[roomPos] = Instantiate(_wallPart);
+
+                    world[roomPos].transform.position = new Vector3(
+						(roomPos.x * 2),
+						world[roomPos].transform.position.y,
+						(roomPos.y * 2)
+					);
+                }
+            }
+        }
+    }
+
+    private void FillWithWalls()
 	{
 		for (int x = tracker.playerRoomPosition.x - (size / 2); x < tracker.playerRoomPosition.x + (size / 2); x++)
 		{
@@ -430,7 +258,7 @@ public class ACGen : MonoBehaviour
 			{
 				Vector2Int currentPos = new Vector2Int(x, z);
 
-				if (map.ContainsKey(currentPos) || visited.ContainsKey(currentPos)) continue;
+				if (map.ContainsKey(currentPos)) continue;
 
 				map.Add(currentPos, CellType.Wall);
 				world.Add(currentPos, Instantiate(_wallPart));
@@ -439,7 +267,6 @@ public class ACGen : MonoBehaviour
 					world[currentPos].transform.position.y,
 					(currentPos.y * 2)
 				);
-				visited.Add(currentPos, false); // added
 			}
 		}
 	}
@@ -447,26 +274,48 @@ public class ACGen : MonoBehaviour
 	private List<Vector2Int> GetNeighbours(Vector2Int pos)
 	{
 		List<Vector2Int> neighbors = new();
-		
-		if (/*pos.x > tracker.playerRoomPosition.x - (size / 2) && */map.ContainsKey(new Vector2Int(pos.x - 2, pos.y)) && map[new Vector2Int(pos.x - 2, pos.y)] != CellType.Empty) 
+
+		List<int> used = new();
+		int randomIndex;
+
+		for (int i = 0; i < 4; i++)
 		{
-			neighbors.Add(new Vector2Int(pos.x - 2, pos.y));
-		}
-		if (/*pos.x < tracker.playerRoomPosition.x + (size / 2) && */map.ContainsKey(new Vector2Int(pos.x + 2, pos.y)) && map[new Vector2Int(pos.x + 2, pos.y)] != CellType.Empty)
-		{
-			neighbors.Add(new Vector2Int(pos.x + 2, pos.y));
-		}
-		if (/*pos.y > tracker.playerRoomPosition.y - (size / 2) && */map.ContainsKey(new Vector2Int(pos.x, pos.y - 2)) && map[new Vector2Int(pos.x, pos.y - 2)] != CellType.Empty)
-		{
-			neighbors.Add(new Vector2Int(pos.x, pos.y - 2));
-		}
-		if (/*pos.y < tracker.playerRoomPosition.y + (size / 2) && */map.ContainsKey(new Vector2Int(pos.x, pos.y + 2)) && map[new Vector2Int(pos.x, pos.y + 2)] != CellType.Empty)
-		{
-			neighbors.Add(new Vector2Int(pos.x, pos.y + 2));
-		}
+            randomIndex = Random.Range(1, 4);
+
+            if (randomIndex == 1 && !used.Contains(1) && map.ContainsKey(new Vector2Int(pos.x - 2, pos.y)) && map[new Vector2Int(pos.x - 2, pos.y)] != CellType.Empty)
+            {
+                neighbors.Add(new Vector2Int(pos.x - 2, pos.y));
+				used.Add(1);
+            }
+            if (randomIndex == 2 && !used.Contains(2) && map.ContainsKey(new Vector2Int(pos.x + 2, pos.y)) && map[new Vector2Int(pos.x + 2, pos.y)] != CellType.Empty)
+            {
+                neighbors.Add(new Vector2Int(pos.x + 2, pos.y));
+                used.Add(2);
+            }
+            if (randomIndex == 3 && !used.Contains(3) && map.ContainsKey(new Vector2Int(pos.x, pos.y - 2)) && map[new Vector2Int(pos.x, pos.y - 2)] != CellType.Empty)
+            {
+                neighbors.Add(new Vector2Int(pos.x, pos.y - 2));
+                used.Add(3);
+            }
+            if (randomIndex == 4 && !used.Contains(4) && map.ContainsKey(new Vector2Int(pos.x, pos.y + 2)) && map[new Vector2Int(pos.x, pos.y + 2)] != CellType.Empty)
+            {
+                neighbors.Add(new Vector2Int(pos.x, pos.y + 2));
+				used.Add(4);
+            }
+        }
 
 		return neighbors;
 	}
+
+	private void ClearMap()
+	{
+        map.Clear();
+
+        foreach (KeyValuePair<Vector2Int, GameObject> pair in world)
+            Destroy(pair.Value);
+
+        world.Clear();
+    }
 
 	[SerializeField] WorldTracker tracker;
 }

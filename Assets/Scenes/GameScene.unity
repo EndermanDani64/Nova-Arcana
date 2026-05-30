@@ -2276,12 +2276,12 @@ MonoBehaviour:
   center: {x: 0, y: 0}
   _wallPart: {fileID: 4448013785994589552, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
   size: 150
-  STOP_COLLISION_PROBABILITY: 0.1
-  randomFactor: 1
-  randomStopFactor: 0.26
-  randomRoomFactor: 0.03
-  randomRoomMinSize: 5
-  randomRoomMaxSize: 10
+  labirynthCount: 1400
+  roomCount: 20
+  wallBlockCount: 7
+  STOP_COLLISION_PROBABILITY: 0.02
+  mapFillPrecentage: 0.8
+  randomFactorForDoors: 1
   tracker: {fileID: 2115761678}
 --- !u!43 &291085692
 Mesh:
