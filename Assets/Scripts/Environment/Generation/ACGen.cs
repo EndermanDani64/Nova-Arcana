@@ -45,8 +45,9 @@ public class ACGen : MonoBehaviour
 		lastNum2 = mapFillPrecentage;
 		lastNum3 = randomFactorForDoors;
 
+        //worldTracker.playerChunkPosChanged += () => { GenerateMap(labirynthCount); };
         GenerateMap(labirynthCount);
-		GenerateRooms(roomCount);
+        GenerateRooms(roomCount);
 		GenerateWallBlocks(wallBlockCount);
     }
 
@@ -252,9 +253,9 @@ public class ACGen : MonoBehaviour
 
     private void FillWithWalls()
 	{
-		for (int x = tracker.playerRoomPosition.x - (size / 2); x < tracker.playerRoomPosition.x + (size / 2); x++)
+		for (int x = worldTracker.playerRoomPosition.x - (size / 2); x < worldTracker.playerRoomPosition.x + (size / 2); x++)
 		{
-			for (int z = tracker.playerRoomPosition.y - (size / 2); z < tracker.playerRoomPosition.y + (size / 2); z++)
+			for (int z = worldTracker.playerRoomPosition.y - (size / 2); z < worldTracker.playerRoomPosition.y + (size / 2); z++)
 			{
 				Vector2Int currentPos = new Vector2Int(x, z);
 
@@ -264,8 +265,8 @@ public class ACGen : MonoBehaviour
 				world.Add(currentPos, Instantiate(_wallPart));
 				world[currentPos].transform.position = new Vector3(
 					(currentPos.x * 2),
-					world[currentPos].transform.position.y,
-					(currentPos.y * 2)
+                    1, // 0.9f + world[currentPos].transform.localScale.y
+                    (currentPos.y * 2)
 				);
 			}
 		}
@@ -280,7 +281,7 @@ public class ACGen : MonoBehaviour
 
 		for (int i = 0; i < 4; i++)
 		{
-            randomIndex = Random.Range(1, 4);
+            randomIndex = Random.Range(1, 5);
 
             if (randomIndex == 1 && !used.Contains(1) && map.ContainsKey(new Vector2Int(pos.x - 2, pos.y)) && map[new Vector2Int(pos.x - 2, pos.y)] != CellType.Empty)
             {
@@ -317,5 +318,6 @@ public class ACGen : MonoBehaviour
         world.Clear();
     }
 
-	[SerializeField] WorldTracker tracker;
+	[SerializeField] WorldTracker worldTracker;
+	[SerializeField] ChunkGenerationManager cgm;
 }

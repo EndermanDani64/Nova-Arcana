@@ -4,27 +4,15 @@ using UnityEngine;
 public class ChunkGenerationManager : MonoBehaviour
 {
     [SerializeField] private GameObject initialNode;
-    public Dictionary<Vector2Int, GameObject> rooms;
-    public Dictionary<Vector2Int, GameObject> activeRooms;
-
-    [SerializeField] private List<GameObject> _allPossibleNodes = new List<GameObject>();
+    public Dictionary<Vector2Int, Chunk> rooms;
+    public Dictionary<Vector2Int, Chunk> activeRooms;
 
     [SerializeField] private int renderDistance = 4;
 
-    private Vector2Int[] offsets = new Vector2Int[]
-    {
-        new Vector2Int(0, 1), // fel
-        new Vector2Int(0, -1), // le
-        new Vector2Int(1, 0), // jobb
-        new Vector2Int(-1, 0) // bal
-    };
-
     private void Start()
     {
-        rooms = new Dictionary<Vector2Int, GameObject>();
-        activeRooms = new Dictionary<Vector2Int, GameObject>();
-        //rooms.Add(new Vector2Int(0, 0), initialNode);
-        //activeRooms.Add(new Vector2Int(0, 0), initialNode);
+        rooms = new Dictionary<Vector2Int, Chunk>();
+        activeRooms = new Dictionary<Vector2Int, Chunk>();
 
         ManageChunksLoading();
 
@@ -34,15 +22,15 @@ public class ChunkGenerationManager : MonoBehaviour
 
     private void DeloadChunks()
     {
-        foreach (KeyValuePair<Vector2Int, GameObject> room in rooms)
+        foreach (KeyValuePair<Vector2Int, Chunk> room in rooms)
         {
-            GameObject g = room.Value;
+            Chunk g = room.Value;
 
-            if (Vector3.Distance(g.transform.position, player.GetComponent<Transform>().position) > 120)
+            /*if (Vector3.Distance(g.transform.position, player.GetComponent<Transform>().position) > 120)
             {
                 g.GetComponent<RoomNode>().DeloadNode();
                 activeRooms.Remove(room.Key);
-            }
+            }*/
         }
     }
 
@@ -58,98 +46,45 @@ public class ChunkGenerationManager : MonoBehaviour
 
                 if (!rooms.ContainsKey(currentPos))
                 {
-                    List<GameObject> potentionalNodes = new List<GameObject>(_allPossibleNodes);
-
-                    Vector3 worldPos = new Vector3(
-                        (currentPos.x * 15) + 15,
-                        0,
-                        (currentPos.y * 15) + 15
-                    );
-
-                    for (int i = 0; i < offsets.Length; i++) // végigmegyünk az összes szomszédon
-                    {
-                        Vector2Int neighbourPos = new Vector2Int(x + offsets[i].x, y + offsets[i].y);
-
-                        if (rooms.ContainsKey(neighbourPos))
-                        {
-                            switch (i)
-                            {
-                                case 0: // felül
-                                    PopNodes(
-                                        potentionalNodes,
-                                        rooms[neighbourPos].GetComponent<RoomNode>().nodeConnection.Top
-                                    );
-                                    break;
-                                case 1: // alul
-                                    PopNodes(
-                                        potentionalNodes,
-                                        rooms[neighbourPos].GetComponent<RoomNode>().nodeConnection.Bottom
-                                    );
-                                    break;
-                                case 2:
-                                    PopNodes(
-                                        potentionalNodes,
-                                        rooms[neighbourPos].GetComponent<RoomNode>().nodeConnection.Right
-                                    );
-                                    break;
-                                case 3:
-                                    PopNodes(
-                                        potentionalNodes,
-                                        rooms[neighbourPos].GetComponent<RoomNode>().nodeConnection.Left
-                                    );
-                                    break;
-                            }
-                            //Debug.Log($"jelen poz: {currentPos}, szomszéd pozició: {neighbourPos}, potentionalNodes = ({TEMP_Print(potentionalNodes)})", rooms[neighbourPos]);
-
-                            if (potentionalNodes.Count == 0)
-                            {
-                                potentionalNodes.Add(initialNode);
-                                continue;
-                            }
-                        }
-                        else
-                        {
-                            //Debug.Log($"nem volt a szomszédos helyen senki, jelen poz: {currentPos}, szomszéd pozició: {neighbourPos}");
-                            continue;
-                        }
-                    }
-
-                    int ranIndex = Random.Range(0, potentionalNodes.Count - 1);
-
-                    if (ranIndex <= potentionalNodes.Count)
-                    {
-                        GameObject newRoom = Instantiate(potentionalNodes[ranIndex], worldPos, Quaternion.identity);
-                        rooms.Add(currentPos, newRoom);
-                        activeRooms.Add(currentPos, newRoom);
-                    }
-                    else
-                    {
-                        GameObject newRoom = Instantiate(potentionalNodes[0], worldPos, Quaternion.identity);
-                        rooms.Add(currentPos, newRoom);
-                        activeRooms.Add(currentPos, newRoom);
-                    }
-                    //Debug.Log($"GENERÁLVA poz: {currentPos}", rooms[currentPos]);
+                    
                 }
                 else
                 {
-                    rooms[currentPos].GetComponent<RoomNode>().LoadNode();
+                    //rooms[currentPos].GetComponent<RoomNode>().LoadNode();
                     if (!activeRooms.ContainsKey(currentPos)) activeRooms.Add(currentPos, rooms[currentPos]);
                 }
             }
         }
     }
 
-    private void PopNodes(List<GameObject> potentionalNodes, List<GameObject> validNodes)
+    [SerializeField] private Player player;
+    [SerializeField] private WorldTracker worldTracker;
+}
+
+public class Chunk
+{
+    private bool active = true;
+    public List<GameObject> walls = new();
+
+    public void LoadChunk()
     {
-        for (int i = potentionalNodes.Count - 1; i > -1; i--)
+        if (active) return;
+        
+        foreach (GameObject wall in walls)
         {
-            if (!validNodes.Contains(potentionalNodes[i]))
-            {
-                potentionalNodes.RemoveAt(i);
-            }
+            if (wall.activeSelf) continue;
+            wall.SetActive(true);
         }
     }
 
-    [SerializeField] private Player player;
-    [SerializeField] private WorldTracker worldTracker;
+    public void DeloadChunk()
+    {
+        if (!active) return;
+        
+        foreach (GameObject wall in walls)
+        {
+            if (!wall.activeSelf) continue;
+            wall.SetActive(false);
+        }
+    }
 }
