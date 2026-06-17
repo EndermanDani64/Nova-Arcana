@@ -419,14 +419,8 @@ MonoBehaviour:
   center: {x: 0, y: 0}
   _wallPart: {fileID: 4448013785994589552, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
   size: 150
-  labirynthCount: 850
-  roomCount: 100
-  wallBlockCount: 7
-  STOP_COLLISION_PROBABILITY: 0.02
-  mapFillPrecentage: 0.8
-  randomFactorForDoors: 1
   worldTracker: {fileID: 2115761678}
-  cgm: {fileID: 0}
+  cgm: {fileID: 1176370724}
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -487,7 +481,7 @@ Camera:
     width: 1
     height: 1
   near clip plane: 0.24
-  far clip plane: 1000
+  far clip plane: 193.1
   field of view: 60
   orthographic: 0
   orthographic size: 5
@@ -545,7 +539,7 @@ MonoBehaviour:
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
   m_RenderPostProcessing: 1
-  m_Antialiasing: 0
+  m_Antialiasing: 1
   m_AntialiasingQuality: 2
   m_StopNaN: 0
   m_Dithering: 0
@@ -1204,7 +1198,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 18
+  m_fontSize: 37.55
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -1544,15 +1538,15 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1176370722}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 03baf9a64f1e3c24bb0833d3b6a1b126, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ChunkGenerationManager
-  initialNode: {fileID: 8693099709286852900, guid: 4c9a4e7efcf87e9498c34c747ad72faf, type: 3}
-  renderDistance: 5
+  renderDistance: 1
   player: {fileID: 284976809}
   worldTracker: {fileID: 2115761678}
+  acgRef: {fileID: 291080434}
 --- !u!1 &1297509495
 GameObject:
   m_ObjectHideFlags: 0
