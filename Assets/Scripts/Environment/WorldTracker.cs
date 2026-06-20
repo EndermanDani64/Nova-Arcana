@@ -7,13 +7,13 @@ public class WorldTracker : MonoBehaviour
     void Update()
     {
         if (playerRoomPosition != new Vector2Int(
-                Mathf.RoundToInt(playerTransformPos.position.x / 15f),
-                Mathf.RoundToInt(playerTransformPos.position.z / 15f)
+                Mathf.RoundToInt(playerTransformPos.position.x / 10f),
+                Mathf.RoundToInt(playerTransformPos.position.z / 10f)
             ))
         {
             playerRoomPosition = new Vector2Int(
-                Mathf.RoundToInt(playerTransformPos.position.x / 15f),
-                Mathf.RoundToInt(playerTransformPos.position.z / 15f)
+                Mathf.RoundToInt(playerTransformPos.position.x / 10f),
+                Mathf.RoundToInt(playerTransformPos.position.z / 10f)
             );
             playerChunkPosChanged?.Invoke();
         } 

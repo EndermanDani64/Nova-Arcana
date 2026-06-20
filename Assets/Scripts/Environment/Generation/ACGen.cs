@@ -18,21 +18,21 @@ public class ACGen : MonoBehaviour
     public Dictionary<Vector2Int, CellType> map;
     public Dictionary<Vector2Int, GameObject> world;
 
-    public int size = 50;
+    public int size = 20; // 20
 
     [Space]
 
-    [SerializeField] static int labirynthCount = 100;
-    [SerializeField] static int roomCount = 10;
-    [SerializeField] static int wallBlockCount = 15;
+    public int labirynthCount = 30; // 60
+    [SerializeField] static int roomCount = 10; // 30
+    [SerializeField] static int wallBlockCount = 10; // 10
 
     [Space]
 
-    [SerializeField] static float STOP_COLLISION_PROBABILITY = 0.005f;
+    [SerializeField] static float STOP_COLLISION_PROBABILITY = 0.08f;
     [SerializeField] static float mapFillPrecentage = 0f;
     [SerializeField] static float randomFactorForDoors = 1f;
-    int randomRoomMinSize = 4;
-    int randomRoomMaxSize = 10;
+    int randomRoomMinSize = 3; // 5
+    int randomRoomMaxSize = 10; // 15
 
     void Start()
     {
@@ -51,7 +51,7 @@ public class ACGen : MonoBehaviour
 
     public static void GenerateMap(int labirynth, LargeChunk targetChunk)
     {
-        Debug.Log("GenerateMap() ran");
+        //Debug.Log("GenerateMap() ran");
         List<Vector2Int> visitedCells = new();
         bool firstIteration = true;
 
@@ -60,39 +60,35 @@ public class ACGen : MonoBehaviour
             int randPosIndex = Random.Range(0, targetChunk.cells.Count);
             Vector2Int parentPos = targetChunk.cells.ElementAt(randPosIndex).Key;
 
-            Debug.Log("GenerateMap() 0 ran");
-
             if (!visitedCells.Contains(parentPos))
                 visitedCells.Add(parentPos);
 
             targetChunk.cells[parentPos] = new Cell(CellType.HallwayEmpty);
             Destroy(targetChunk.cells[parentPos].gm); // GENERATE FLOOR!!! IF WALKABLE/ EMPTY
 
-            Debug.Log("GenerateMap() 1 ran");
 
             Dictionary<Vector2Int, Vector2Int> frontier = new();
 
-            foreach (Vector2Int childP in GetNeighbours(parentPos, targetChunk))
+            foreach (Vector2Int childP in GetNeighbors(parentPos, targetChunk))
             {
                 if (frontier.ContainsKey(childP)) continue;
                 frontier.Add(childP, parentPos);
             }
 
-            while (/*visitedCells.Count / (size * size) < mapFillPrecentage*/ frontier.Count > 0)
+            while (frontier.Count > 0)
             {
                 int randChoice = Random.Range(0, frontier.Count - 1);
                 Vector2Int childPos = frontier.ElementAt(randChoice).Key; // x, y rand | line 71
 
                 if (Random.value < STOP_COLLISION_PROBABILITY)
                 {
-                    //frontier.Remove(childPos);
                     frontier.Clear();
                     continue;
                 }
 
-                if (targetChunk.cells[childPos].cellType == CellType.Wall)
+                if (targetChunk.cells[childPos].CellType == CellType.Wall)
                 {
-                    targetChunk.cells[childPos].cellType = CellType.HallwayEmpty;
+                    targetChunk.cells[childPos].CellType = CellType.HallwayEmpty;
                     Destroy(targetChunk.cells[childPos].gm);
 
                     Vector2Int doorwayPos = new();
@@ -101,9 +97,9 @@ public class ACGen : MonoBehaviour
                     {
                         doorwayPos = new Vector2Int(childPos.x, childPos.y + 1);
 
-                        if (targetChunk.cells[doorwayPos].cellType == CellType.Wall && Random.value < randomFactorForDoors)
+                        if (targetChunk.cells[doorwayPos].CellType == CellType.Wall && Random.value < randomFactorForDoors)
                         {
-                            targetChunk.cells[doorwayPos].cellType = CellType.HallwayEmpty;
+                            targetChunk.cells[doorwayPos].CellType = CellType.HallwayEmpty;
                             Destroy(targetChunk.cells[doorwayPos].gm);
                         }
                     }
@@ -111,9 +107,9 @@ public class ACGen : MonoBehaviour
                     {
                         doorwayPos = new Vector2Int(childPos.x, childPos.y - 1);
 
-                        if (targetChunk.cells[doorwayPos].cellType == CellType.Wall && Random.value < randomFactorForDoors)
+                        if (targetChunk.cells[doorwayPos].CellType == CellType.Wall && Random.value < randomFactorForDoors)
                         {
-                            targetChunk.cells[doorwayPos].cellType = CellType.HallwayEmpty;
+                            targetChunk.cells[doorwayPos].CellType = CellType.HallwayEmpty;
                             Destroy(targetChunk.cells[doorwayPos].gm);
                         }
                     }
@@ -121,9 +117,9 @@ public class ACGen : MonoBehaviour
                     {
                         doorwayPos = new Vector2Int(childPos.x + 1, childPos.y);
 
-                        if (targetChunk.cells[doorwayPos].cellType == CellType.Wall && Random.value < randomFactorForDoors)
+                        if (targetChunk.cells[doorwayPos].CellType == CellType.Wall && Random.value < randomFactorForDoors)
                         {
-                            targetChunk.cells[doorwayPos].cellType = CellType.HallwayEmpty;
+                            targetChunk.cells[doorwayPos].CellType = CellType.HallwayEmpty;
                             Destroy(targetChunk.cells[doorwayPos].gm);
                         }
                     }
@@ -131,25 +127,22 @@ public class ACGen : MonoBehaviour
                     {
                         doorwayPos = new Vector2Int(childPos.x - 1, childPos.y);
 
-                        if (targetChunk.cells[doorwayPos].cellType == CellType.Wall && Random.value < randomFactorForDoors)
+                        if (targetChunk.cells[doorwayPos].CellType == CellType.Wall && Random.value < randomFactorForDoors)
                         {
-                            targetChunk.cells[doorwayPos].cellType = CellType.HallwayEmpty;
+                            targetChunk.cells[doorwayPos].CellType = CellType.HallwayEmpty;
                             Destroy(targetChunk.cells[doorwayPos].gm);
                         }
                     }
 
                     List<Vector2Int> neighborList = new();
 
-                    foreach (Vector2Int childP in GetNeighbours(childPos, targetChunk))
+                    foreach (Vector2Int childP in GetNeighbors(childPos, targetChunk))
                     {
                         if (neighborList.Contains(childP)) continue;
                         neighborList.Add(childP);
-                        //frontier.Add(childP, childPos); // childPos = parentPos
                     }
 
                     int randomIndex = Random.Range(0, neighborList.Count - 1);
-
-                    Debug.Log($"neigbourList count: {neighborList.Count} | randomIndex: {randomIndex}");
 
                     if (neighborList.Count > 0 && !frontier.ContainsKey(neighborList[randomIndex]))
                     {
@@ -163,13 +156,81 @@ public class ACGen : MonoBehaviour
         }
     }
 
-    private void GenerateRooms(int roomsCount)
+    public void MakePatches(int loops, LargeChunk targetLargeChunk)
+    {
+        List<Cell> toMakeWall = new();
+        List<Cell> toMakeEmpty = new();
+
+        for (int _ = 0; _ < loops; _++)
+        {
+            foreach (KeyValuePair<Vector2Int, Cell> pair in targetLargeChunk.cells)
+            {
+                Cell currentCell = pair.Value;
+                int wallNeighbourCount = GetWallNeighbors(pair.Key, targetLargeChunk).Count;
+
+                if (currentCell.CellType == CellType.Wall && (wallNeighbourCount == 0 /*|| (Random.value < .001 && wallNeighbourCount <= 2)*/))
+                {
+                    toMakeEmpty.Add(currentCell);
+                }
+
+                /*if (currentCell.CellType == CellType.HallwayEmpty && wallNeighbourCount >= 3)
+                    toMakeWall.Add(currentCell);*/
+            }
+        }
+
+        foreach (Cell cell in toMakeEmpty)
+        {
+            cell.CellType = CellType.HallwayEmpty;
+            Destroy(cell.gm);
+            cell.gm = null;
+        }
+
+        /*foreach (Cell cell in toMakeWall)
+        {
+            cell.CellType = CellType.Wall;
+            cell.gm = Instantiate(_wallPart);
+            cell.gm.transform.position = new Vector3(cell.worldPosition.x, 1, cell.worldPosition.y);
+        }*/
+    }
+
+    private List<Vector2Int> GetWallNeighbors(Vector2Int pos, LargeChunk lc)
+    {
+        List<Vector2Int> neighbors = new();
+
+        Vector2Int currentPos = new Vector2Int(pos.x + 1, pos.y);
+        if (lc.cells.ContainsKey(currentPos) && lc.cells[currentPos].CellType == CellType.Wall)
+        {
+            neighbors.Add(currentPos);
+        }
+
+        currentPos = new Vector2Int(pos.x, pos.y + 1);
+        if (lc.cells.ContainsKey(currentPos) && lc.cells[currentPos].CellType == CellType.Wall)
+        {
+            neighbors.Add(currentPos);
+        }
+
+        currentPos = new Vector2Int(pos.x - 1, pos.y);
+        if (lc.cells.ContainsKey(currentPos) && lc.cells[currentPos].CellType == CellType.Wall)
+        {
+            neighbors.Add(currentPos);
+        }
+
+        currentPos = new Vector2Int(pos.x, pos.y - 1);
+        if (lc.cells.ContainsKey(currentPos) && lc.cells[currentPos].CellType == CellType.Wall)
+        {
+            neighbors.Add(currentPos);
+        }
+
+        return neighbors;
+    }
+
+    public void GenerateRooms(int roomsCount, LargeChunk currentLargeChunk)
     {
         List<Vector2Int> emptyParts = new();
 
-        foreach (KeyValuePair<Vector2Int, CellType> pair in map)
+        foreach (KeyValuePair<Vector2Int, Cell> pair in currentLargeChunk.cells)
         {
-            if (pair.Value != CellType.RoomEmpty || emptyParts.Contains(pair.Key)) continue;
+            if (emptyParts.Contains(pair.Key)) continue;
             emptyParts.Add(pair.Key);
         }
 
@@ -186,22 +247,22 @@ public class ACGen : MonoBehaviour
                 {
                     Vector2Int roomPos = new Vector2Int(roomX, roomY);
 
-                    if (!world.ContainsKey(roomPos)) continue;
+                    if (!currentLargeChunk.cells.ContainsKey(roomPos)) continue;
 
-                    map[roomPos] = CellType.RoomEmpty;
-                    Destroy(world[roomPos]);
+                    currentLargeChunk.cells[roomPos].CellType = CellType.RoomEmpty;
+                    Destroy(currentLargeChunk.cells[roomPos].gm);
                 }
             }
         }
     }
-
-    private void GenerateWallBlocks(int wallBlocksCount)
+    
+    public void GenerateWallBlocks(int wallBlocksCount)
     {
         List<Vector2Int> emptyParts = new();
 
         foreach (KeyValuePair<Vector2Int, CellType> pair in map)
         {
-            if (pair.Value != CellType.Wall || emptyParts.Contains(pair.Key)) continue;
+            if (emptyParts.Contains(pair.Key)) continue;
             emptyParts.Add(pair.Key);
         }
 
@@ -225,7 +286,7 @@ public class ACGen : MonoBehaviour
 
                     world[roomPos].transform.position = new Vector3(
                         (roomPos.x * 2),
-                        world[roomPos].transform.position.y,
+                        1,
                         (roomPos.y * 2)
                     );
                 }
@@ -257,13 +318,75 @@ public class ACGen : MonoBehaviour
 
                 map.Add(currentWorldPos, CellType.Wall);
                 world.Add(currentWorldPos, newCell.gm);
+                cgm.cellWorld.Add(currentWorldPos, newCell);
             }
         }
     }
 
+    public int GetWeight(int depthOfCalculation, Cell targetCell, LargeChunk targetChunk)
+    {
+        if (targetCell.CellType != CellType.Wall) return -1;
+        if (!targetChunk.cells.ContainsKey(targetCell.worldPosition))
+        {
+            Debug.LogWarning("Doesn't contain the key!");
+            return 0;
+        }
+
+        int weight = 0;
+        List<Vector2Int> neighbors = GetNeighbors(targetCell.worldPosition, targetChunk);
+
+        for (int depthC = 0; depthC < depthOfCalculation; depthC++)
+        {
+            List<Vector2Int> toAdd = new();
+            List<Vector2Int> toRemove = new();
+
+            foreach (Vector2Int pos in neighbors)
+            {
+                if (!targetChunk.cells.ContainsKey(pos)) continue;
+
+                if (targetChunk.cells[pos].CellType == CellType.Wall)
+                {
+                    toAdd.AddRange(GetNeighbors(pos, targetChunk));
+                    weight++;
+                }
+
+                toRemove.Add(pos);
+            }
+
+            foreach (Vector2Int r in toRemove)
+                neighbors.Remove(r);
+
+            neighbors.AddRange(toAdd);
+        }
+
+        return weight;
+    }
+
+    public GameObject CreateCellGameObject(Vector2Int worldPosition, CellType cellType)
+    {
+        if (!map.ContainsKey(worldPosition) || cellType != CellType.Wall) return null;
+
+        GameObject gm = Instantiate(_wallPart);
+        gm.transform.position = new Vector3(
+            (worldPosition.x * 2),
+            1,
+            (worldPosition.y * 2)
+        );
+
+        return gm;
+    }
+    public void DestroyCellGameObject(GameObject gm)
+    {
+        Destroy(gm);
+    }
+
     // submethods
 
-    private static List<Vector2Int> GetNeighbours(Vector2Int pos, LargeChunk currentChunk)
+    /// <summary>
+    /// pos parameter is a world position
+    /// </summary>
+    /// <returns></returns>
+    private static List<Vector2Int> GetNeighbors(Vector2Int pos, LargeChunk currentChunk)
     {
         List<Vector2Int> neighbors = new();
 
@@ -274,22 +397,22 @@ public class ACGen : MonoBehaviour
         {
             randomIndex = Random.Range(1, 5);
 
-            if (randomIndex == 1 && !used.Contains(1) && currentChunk.cells.ContainsKey(new Vector2Int(pos.x - 2, pos.y)) && currentChunk.cells[new Vector2Int(pos.x - 2, pos.y)].cellType != CellType.HallwayEmpty && currentChunk.cells[new Vector2Int(pos.x - 2, pos.y)].cellType != CellType.RoomEmpty)
+            if (randomIndex == 1 && !used.Contains(1) && currentChunk.cells.ContainsKey(new Vector2Int(pos.x - 2, pos.y)) && currentChunk.cells[new Vector2Int(pos.x - 2, pos.y)].CellType != CellType.HallwayEmpty && currentChunk.cells[new Vector2Int(pos.x - 2, pos.y)].CellType != CellType.RoomEmpty)
             {
                 neighbors.Add(new Vector2Int(pos.x - 2, pos.y));
                 used.Add(1);
             }
-            if (randomIndex == 2 && !used.Contains(2) && currentChunk.cells.ContainsKey(new Vector2Int(pos.x + 2, pos.y)) && currentChunk.cells[new Vector2Int(pos.x + 2, pos.y)].cellType != CellType.HallwayEmpty && currentChunk.cells[new Vector2Int(pos.x + 2, pos.y)].cellType != CellType.RoomEmpty)
+            if (randomIndex == 2 && !used.Contains(2) && currentChunk.cells.ContainsKey(new Vector2Int(pos.x + 2, pos.y)) && currentChunk.cells[new Vector2Int(pos.x + 2, pos.y)].CellType != CellType.HallwayEmpty && currentChunk.cells[new Vector2Int(pos.x + 2, pos.y)].CellType != CellType.RoomEmpty)
             {
                 neighbors.Add(new Vector2Int(pos.x + 2, pos.y));
                 used.Add(2);
             }
-            if (randomIndex == 3 && !used.Contains(3) && currentChunk.cells.ContainsKey(new Vector2Int(pos.x, pos.y - 2)) && currentChunk.cells[new Vector2Int(pos.x, pos.y - 2)].cellType != CellType.HallwayEmpty && currentChunk.cells[new Vector2Int(pos.x, pos.y - 2)].cellType != CellType.RoomEmpty)
+            if (randomIndex == 3 && !used.Contains(3) && currentChunk.cells.ContainsKey(new Vector2Int(pos.x, pos.y - 2)) && currentChunk.cells[new Vector2Int(pos.x, pos.y - 2)].CellType != CellType.HallwayEmpty && currentChunk.cells[new Vector2Int(pos.x, pos.y - 2)].CellType != CellType.RoomEmpty)
             {
                 neighbors.Add(new Vector2Int(pos.x, pos.y - 2));
                 used.Add(3);
             }
-            if (randomIndex == 4 && !used.Contains(4) && currentChunk.cells.ContainsKey(new Vector2Int(pos.x, pos.y + 2)) && currentChunk.cells[new Vector2Int(pos.x, pos.y + 2)].cellType != CellType.HallwayEmpty && currentChunk.cells[new Vector2Int(pos.x, pos.y + 2)].cellType != CellType.RoomEmpty)
+            if (randomIndex == 4 && !used.Contains(4) && currentChunk.cells.ContainsKey(new Vector2Int(pos.x, pos.y + 2)) && currentChunk.cells[new Vector2Int(pos.x, pos.y + 2)].CellType != CellType.HallwayEmpty && currentChunk.cells[new Vector2Int(pos.x, pos.y + 2)].CellType != CellType.RoomEmpty)
             {
                 neighbors.Add(new Vector2Int(pos.x, pos.y + 2));
                 used.Add(4);
@@ -297,6 +420,28 @@ public class ACGen : MonoBehaviour
         }
 
         return neighbors;
+    }
+
+    private int NeighbourCountByCellType(Cell mainCell, LargeChunk parentLargeChunk, CellType targetType)
+    {
+        Vector2Int currentIndexPos = new Vector2Int(
+            Mathf.FloorToInt((float)mainCell.worldPosition.x / 2),
+            Mathf.FloorToInt((float)mainCell.worldPosition.y / 2)
+        );
+
+        int returnValue = 0;
+
+        List<Vector2Int> neighbours = GetNeighbors(currentIndexPos, parentLargeChunk);
+
+        foreach (Vector2Int index in neighbours)
+        {
+            if (!parentLargeChunk.cells.ContainsKey(index)) continue;
+
+            if (parentLargeChunk.cells[index].CellType == CellType.Wall)
+                returnValue++;
+        }
+
+        return returnValue;
     }
 
     private void ClearMap()
