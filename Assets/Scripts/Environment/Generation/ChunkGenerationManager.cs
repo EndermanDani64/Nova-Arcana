@@ -33,21 +33,6 @@ public class ChunkGenerationManager : MonoBehaviour
         ManageChunksLoading();
 
         worldTracker.playerChunkPosChanged += ManageChunksLoading;
-        worldTracker.playerChunkPosChanged += DeloadChunks;
-    }
-
-    private void DeloadChunks()
-    {
-        foreach (KeyValuePair<Vector2Int, SmallChunk> room in smallChunks)
-        {
-            SmallChunk g = room.Value;
-
-            /*if (Vector3.Distance(g.transform.position, player.GetComponent<Transform>().position) > 120)
-            {
-                g.GetComponent<RoomNode>().DeloadNode();
-                activeRooms.Remove(room.Key);
-            }*/
-        }
     }
 
     private void ManageSmallChunkVisibility()
@@ -130,6 +115,9 @@ public class ChunkGenerationManager : MonoBehaviour
 
 public class Cell
 {
+    public GameObject GObject;
+    public Vector2Int WorldPosition;
+
     public CellType CellType
     {
         get { return _cellType; }
@@ -137,20 +125,17 @@ public class Cell
         {
             _cellType = value;
             if (value != CellType.Wall)
-                wallWeight = -1;
+                WallWeight = -1;
         }
     }
     private CellType _cellType;
 
-    public GameObject gm;
-    public Vector2Int worldPosition;
-
-    public int wallWeight = -1;
+    public int WallWeight = -1;
 
     public Cell(CellType cellType)
     {
         this.CellType = cellType;
-        if (cellType == CellType.Wall) wallWeight = 0;
+        if (cellType == CellType.Wall) WallWeight = 0;
     }
 }
 
@@ -190,8 +175,8 @@ public class SmallChunk
 
         foreach (KeyValuePair<Vector2Int, Cell> pair in cells)
         {
-            if (pair.Value.gm.activeSelf) continue;
-            pair.Value.gm.SetActive(true);
+            if (pair.Value.GObject.activeSelf) continue;
+            pair.Value.GObject.SetActive(true);
         }
 
         Active = true;
@@ -203,8 +188,8 @@ public class SmallChunk
 
         foreach (KeyValuePair<Vector2Int, Cell> pair in cells)
         {
-            if (!pair.Value.gm.activeSelf) continue;
-            pair.Value.gm.SetActive(false);
+            if (!pair.Value.GObject.activeSelf) continue;
+            pair.Value.GObject.SetActive(false);
         }
 
         Active = false;
@@ -218,7 +203,7 @@ public class SmallChunk
 
         foreach (KeyValuePair<Vector2Int, Cell> pair in cells)
         {
-            pair.Value.gm = _parentChunkRef.acgRef.CreateCellGameObject(pair.Key, pair.Value.CellType);
+            pair.Value.GObject = _parentChunkRef.acgRef.CreateCellGameObject(pair.Key, pair.Value.CellType);
         }
     }
 
@@ -230,7 +215,7 @@ public class SmallChunk
 
         foreach (KeyValuePair<Vector2Int, Cell> pair in cells)
         {
-            _parentChunkRef.acgRef.DestroyCellGameObject(pair.Value.gm);
+            _parentChunkRef.acgRef.DestroyCellGameObject(pair.Value.GObject);
         }
     }
 }
@@ -284,12 +269,10 @@ public class LargeChunk
     public void AddCell(Cell cell)
     {
         Vector2Int origin = largeChunkPivot - new Vector2Int(Mathf.RoundToInt(ChunkGenerationManager.largeChunkSize / 2), Mathf.RoundToInt(ChunkGenerationManager.largeChunkSize / 2));
-        Vector2Int worldPos = cell.worldPosition - origin;
+        Vector2Int worldPos = cell.WorldPosition - origin;
         Vector2Int smallChunkKey = worldPos / ChunkGenerationManager.smallChunkSize;
 
-        //Debug.Log($"origin: {origin}, worldPos: {worldPos}, cell's worldPos: {cell.worldPosition}");
-
-        this.cells.Add(cell.worldPosition, cell);
+        this.cells.Add(cell.WorldPosition, cell);
         smallChunks[smallChunkKey].cells.Add(worldPos, cell); // key volt az index (mellékes)
     }
 
@@ -333,10 +316,9 @@ public class LargeChunk
         GenerateMap(acgRef.labirynthCount, this);
 
         acgRef.MakePatches(1, this);
-        acgRef.GenerateRooms(10, this);
-        //acgRef.GenerateWallBlocks(3);
+        acgRef.GenerateRooms(Random.Range(4, 10), this);
+        //acgRef.GenerateWallBlocks(1);
     }
-
 
     public ACGen acgRef;
 }
