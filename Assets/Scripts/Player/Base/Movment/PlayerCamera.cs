@@ -7,7 +7,7 @@ public class PlayerCamera : MonoBehaviour
     public float sensitivityY;
 
     [Header("References")]
-    public Transform orientation;
+    [SerializeField] private Transform _orientation;
 
     float _xRotation;
     float _yRotation;
@@ -20,8 +20,8 @@ public class PlayerCamera : MonoBehaviour
 
     void Update()
     {
-        float mouseX = Input.GetAxisRaw("Mouse X") * sensitivityX * Time.deltaTime;    
-        float mouseY = Input.GetAxisRaw("Mouse Y") * sensitivityY * Time.deltaTime;
+        float mouseX = Mathf.Clamp(Input.GetAxisRaw("Mouse X") * sensitivityX * Time.deltaTime, -5f, 5f);
+        float mouseY = Mathf.Clamp(Input.GetAxisRaw("Mouse Y") * sensitivityY * Time.deltaTime, -5f, 5f);
 
         _yRotation += mouseX;
         _xRotation -= mouseY;
@@ -30,6 +30,6 @@ public class PlayerCamera : MonoBehaviour
 
         // rotation
         transform.rotation = Quaternion.Euler(_xRotation, _yRotation, 0);
-        orientation.rotation = Quaternion.Euler(0, _yRotation, 0);
+        _orientation.rotation = Quaternion.Euler(0, _yRotation, 0);
     }
 }

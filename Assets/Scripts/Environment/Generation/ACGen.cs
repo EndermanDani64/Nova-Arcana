@@ -1,3 +1,5 @@
+using JetBrains.Annotations;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -6,7 +8,8 @@ public enum CellType
 {
     Wall,
     HallwayEmpty,
-    RoomEmpty
+    RoomEmpty,
+    LightEmpty
 }
 
 public class ACGen : MonoBehaviour
@@ -14,38 +17,28 @@ public class ACGen : MonoBehaviour
     //public int renderDist = 2;
     public Vector2Int center = new Vector2Int(0, 0);
     [SerializeField] private GameObject _wallPart;
-
-    public Dictionary<Vector2Int, CellType> map;
-    public Dictionary<Vector2Int, GameObject> world;
-
-    public int size = 20; // 20
+    public GameObject _ceilingPart;
+    public GameObject _lightPart;
 
     [Space]
 
-    public int labirynthCount = 30; // 60
-    [SerializeField] static int roomCount = 10; // 30
-    [SerializeField] static int wallBlockCount = 10; // 10
+    public int labirynthCount = 20; // 30
+    [SerializeField] int roomCount = 10; // 10
+    [SerializeField] int wallBlockCount = 10; // 10
 
     [Space]
 
-    [SerializeField] static float STOP_COLLISION_PROBABILITY = 0.08f;
-    [SerializeField] static float mapFillPrecentage = 0f;
-    [SerializeField] static float randomFactorForDoors = 1f;
-    int randomRoomMinSize = 3; // 5
-    int randomRoomMaxSize = 10; // 15
+    [SerializeField] float STOP_COLLISION_PROBABILITY = 0.08f;
+    [SerializeField] float mapFillPrecentage = 0f;
+    [SerializeField] float randomFactorForDoors = 1f;
+    int randomRoomMinSize = 2; // 5
+    int randomRoomMaxSize = 4; // 15
+    /*int ceilingLightDistance = 1;
+    int lightCounter = 1;*/
 
-    void Start()
+    public IEnumerator GenerateMap(int labirynth, LargeChunk targetChunk)
     {
-        map = new();
-        world = new();
-    }
-
-
-    public static void GenerateMap(int labirynth, LargeChunk targetChunk)
-    {
-        //Debug.Log("GenerateMap() ran");
         List<Vector2Int> visitedCells = new();
-        bool firstIteration = true;
 
         for (int f = 0; f < labirynth; f++)
         {
@@ -55,9 +48,25 @@ public class ACGen : MonoBehaviour
             if (!visitedCells.Contains(parentPos))
                 visitedCells.Add(parentPos);
 
-            targetChunk.cells[parentPos] = new Cell(CellType.HallwayEmpty);
-            Destroy(targetChunk.cells[parentPos].GObject); // GENERATE FLOOR!!! IF WALKABLE/ EMPTY
+            // generate walkable area
 
+            if (!targetChunk.cells.ContainsKey(parentPos)) continue;
+
+            targetChunk.cells[parentPos].CellType = CellType.HallwayEmpty;
+            Destroy(targetChunk.cells[parentPos].wallGameObject); // GENERATE FLOOR!!! IF WALKABLE/ EMPTY
+
+            if (Random.value < 1f)
+            {
+                targetChunk.cells[parentPos].lightGameObject = Instantiate(_lightPart);
+                targetChunk.cells[parentPos].lightGameObject.transform.position = new Vector3(
+                    targetChunk.cells[parentPos].WorldPosition.x * 2,
+                    1,
+                    targetChunk.cells[parentPos].WorldPosition.y * 2
+                );
+                targetChunk.cells[parentPos].CellType = CellType.LightEmpty;
+            }
+
+            // start of the main logic
 
             Dictionary<Vector2Int, Vector2Int> frontier = new();
 
@@ -81,7 +90,8 @@ public class ACGen : MonoBehaviour
                 if (targetChunk.cells[childPos].CellType == CellType.Wall)
                 {
                     targetChunk.cells[childPos].CellType = CellType.HallwayEmpty;
-                    Destroy(targetChunk.cells[childPos].GObject);
+                    Destroy(targetChunk.cells[childPos].wallGameObject);
+                    targetChunk.notCategorisedCells++;
 
                     Vector2Int doorwayPos = new();
 
@@ -92,7 +102,8 @@ public class ACGen : MonoBehaviour
                         if (targetChunk.cells[doorwayPos].CellType == CellType.Wall && Random.value < randomFactorForDoors)
                         {
                             targetChunk.cells[doorwayPos].CellType = CellType.HallwayEmpty;
-                            Destroy(targetChunk.cells[doorwayPos].GObject);
+                            Destroy(targetChunk.cells[doorwayPos].wallGameObject);
+                            targetChunk.notCategorisedCells++;
                         }
                     }
                     else if (frontier[childPos].y < childPos.y && frontier[childPos].x == childPos.x)
@@ -102,7 +113,8 @@ public class ACGen : MonoBehaviour
                         if (targetChunk.cells[doorwayPos].CellType == CellType.Wall && Random.value < randomFactorForDoors)
                         {
                             targetChunk.cells[doorwayPos].CellType = CellType.HallwayEmpty;
-                            Destroy(targetChunk.cells[doorwayPos].GObject);
+                            Destroy(targetChunk.cells[doorwayPos].wallGameObject);
+                            targetChunk.notCategorisedCells++;
                         }
                     }
                     else if (frontier[childPos].x > childPos.x && frontier[childPos].y == childPos.y)
@@ -112,7 +124,8 @@ public class ACGen : MonoBehaviour
                         if (targetChunk.cells[doorwayPos].CellType == CellType.Wall && Random.value < randomFactorForDoors)
                         {
                             targetChunk.cells[doorwayPos].CellType = CellType.HallwayEmpty;
-                            Destroy(targetChunk.cells[doorwayPos].GObject);
+                            Destroy(targetChunk.cells[doorwayPos].wallGameObject);
+                            targetChunk.notCategorisedCells++;
                         }
                     }
                     else if (frontier[childPos].x < childPos.x && frontier[childPos].y == childPos.y)
@@ -122,7 +135,8 @@ public class ACGen : MonoBehaviour
                         if (targetChunk.cells[doorwayPos].CellType == CellType.Wall && Random.value < randomFactorForDoors)
                         {
                             targetChunk.cells[doorwayPos].CellType = CellType.HallwayEmpty;
-                            Destroy(targetChunk.cells[doorwayPos].GObject);
+                            Destroy(targetChunk.cells[doorwayPos].wallGameObject);
+                            targetChunk.notCategorisedCells++;
                         }
                     }
 
@@ -142,13 +156,14 @@ public class ACGen : MonoBehaviour
                     }
 
                     frontier.Remove(childPos);
-                    firstIteration = false;
                 }
             }
         }
+
+        yield return null;
     }
 
-    public void MakePatches(int loops, LargeChunk targetLargeChunk)
+    public IEnumerator MakePatches(int loops, LargeChunk targetLargeChunk)
     {
         List<Cell> toMakeWall = new();
         List<Cell> toMakeEmpty = new();
@@ -163,26 +178,29 @@ public class ACGen : MonoBehaviour
                 if (currentCell.CellType == CellType.Wall && (wallNeighbourCount == 0 /*|| (Random.value < .001 && wallNeighbourCount <= 2)*/))
                 {
                     toMakeEmpty.Add(currentCell);
+                    //Debug.Log($"key: {pair.Key}, celltype: {currentCell.CellType}, falak száma körülötte: {wallNeighbourCount}", currentCell.wallGameObject);
                 }
 
-                if (currentCell.CellType == CellType.HallwayEmpty && wallNeighbourCount >= 3)
-                    toMakeWall.Add(currentCell);
+                /*if (currentCell.CellType == CellType.HallwayEmpty && wallNeighbourCount >= 3)
+                    toMakeWall.Add(currentCell);*/
             }
         }
 
         foreach (Cell cell in toMakeEmpty)
         {
             cell.CellType = CellType.HallwayEmpty;
-            Destroy(cell.GObject);
-            cell.GObject = null;
+            Destroy(cell.wallGameObject);
+            cell.wallGameObject = null;
         }
 
-        foreach (Cell cell in toMakeWall)
+        /*foreach (Cell cell in toMakeWall) //<-- positioning the gm-s are offsetted by .5 (worldpos)
         {
             cell.CellType = CellType.Wall;
             cell.GObject = Instantiate(_wallPart);
             cell.GObject.transform.position = new Vector3(cell.WorldPosition.x, 1, cell.WorldPosition.y);
-        }
+        }*/
+
+        yield return null;
     }
 
     private List<Vector2Int> GetWallNeighbors(Vector2Int pos, LargeChunk lc)
@@ -216,7 +234,7 @@ public class ACGen : MonoBehaviour
         return neighbors;
     }
 
-    public void GenerateRooms(int roomsCount, LargeChunk currentLargeChunk)
+    public IEnumerator GenerateRooms(int roomsCount, LargeChunk currentLargeChunk)
     {
         List<Vector2Int> emptyParts = new();
 
@@ -242,13 +260,15 @@ public class ACGen : MonoBehaviour
                     if (!currentLargeChunk.cells.ContainsKey(roomPos)) continue;
 
                     currentLargeChunk.cells[roomPos].CellType = CellType.RoomEmpty;
-                    Destroy(currentLargeChunk.cells[roomPos].GObject);
+                    Destroy(currentLargeChunk.cells[roomPos].wallGameObject);
                 }
             }
         }
+
+        yield return null;
     }
     
-    public void GenerateWallBlocks(int wallBlocksCount)
+    /*public void GenerateWallBlocks(int wallBlocksCount)
     {
         List<Vector2Int> emptyParts = new();
 
@@ -284,35 +304,35 @@ public class ACGen : MonoBehaviour
                 }
             }
         }
-    }
+    }*/
 
-    public void FillWithWalls(LargeChunk largeChunk)
+    public IEnumerator FillWithWalls(LargeChunk largeChunk)
     {
-        for (int x = Mathf.RoundToInt(largeChunk.largeChunkPivot.x - (ChunkGenerationManager.largeChunkSize / 2)); x < Mathf.RoundToInt(largeChunk.largeChunkPivot.x + (ChunkGenerationManager.largeChunkSize / 2)); x++)
+        for (int x = Mathf.RoundToInt(largeChunk.largeChunkWorldPivotPos.x - (cgm.largeChunkSize / 2)); x < Mathf.RoundToInt(largeChunk.largeChunkWorldPivotPos.x + (cgm.largeChunkSize / 2)); x++)
         {
-            for (int z = Mathf.RoundToInt(largeChunk.largeChunkPivot.y - (ChunkGenerationManager.largeChunkSize / 2)); z < Mathf.RoundToInt(largeChunk.largeChunkPivot.y + (ChunkGenerationManager.largeChunkSize / 2)); z++)
+            for (int z = Mathf.RoundToInt(largeChunk.largeChunkWorldPivotPos.y - (cgm.largeChunkSize / 2)); z < Mathf.RoundToInt(largeChunk.largeChunkWorldPivotPos.y + (cgm.largeChunkSize / 2)); z++)
             {
                 Vector2Int currentWorldPos = new Vector2Int(x, z);
 
-                if (map.ContainsKey(currentWorldPos)) continue;
+                if (cgm.cellWorld.ContainsKey(currentWorldPos)) continue;
 
-                Cell newCell = new(CellType.Wall);
+                Cell newCell = new(CellType.Wall, currentWorldPos); // !!! <- currentWorldPos : most akk melyik? (duplázott vagy nem)
                 newCell.WorldPosition = currentWorldPos;
 
                 largeChunk.AddCell(newCell);
 
-                newCell.GObject = Instantiate(_wallPart);
-                newCell.GObject.transform.position = new Vector3(
+                newCell.wallGameObject = Instantiate(_wallPart);
+                newCell.wallGameObject.transform.position = new Vector3(
                     (currentWorldPos.x * 2),
                     1,
                     (currentWorldPos.y * 2)
                 );
 
-                map.Add(currentWorldPos, CellType.Wall);
-                world.Add(currentWorldPos, newCell.GObject);
                 cgm.cellWorld.Add(currentWorldPos, newCell);
             }
         }
+
+        yield return null;
     }
 
     public int GetWeight(int depthOfCalculation, Cell targetCell, LargeChunk targetChunk)
@@ -354,16 +374,97 @@ public class ACGen : MonoBehaviour
         return weight;
     }
 
+    public Area MakeArea(LargeChunk largeChunkRef)
+    {
+        if (largeChunkRef.notCategorisedCells <= 0) return null;
+
+        Debug.Log("makearea");
+
+        Cell currentCell;
+        Area newArea = new(largeChunkRef);
+
+        // GET ALL EMPTY CELLS IN LARGECHUNK
+
+        List<Vector2Int> allPossibleCellPosesForArea = new();
+
+        foreach (KeyValuePair<Vector2Int, Cell> pair in largeChunkRef.cells)
+        {
+            if (pair.Value.CellType == CellType.HallwayEmpty && pair.Value.areaParent == null)
+                allPossibleCellPosesForArea.Add(pair.Key);
+        }
+
+        // Set the starting cell randomly (by world position), and the first one is already gets added to the final area.
+
+        Vector2Int _worldPos = allPossibleCellPosesForArea[Random.Range(0, allPossibleCellPosesForArea.Count - 1)];
+        currentCell = largeChunkRef.cells[_worldPos];
+
+        allPossibleCellPosesForArea.Clear();
+
+        allPossibleCellPosesForArea.Add(_worldPos);
+
+        int temp = 0;
+
+        // we go while we can't find any more empty cells directly next to the already checked ones.
+        while (allPossibleCellPosesForArea.Count > 0)
+        {
+            temp++;
+
+            if (temp > 10) break;
+
+            List<Vector2Int> toBeRemoved = new();
+            List<Vector2Int> toBeAdded = new();  // <- külön lista
+
+            foreach (Vector2Int possibleWorldPos in allPossibleCellPosesForArea)
+            {
+                if (!largeChunkRef.cells.ContainsKey(possibleWorldPos) ||
+                    largeChunkRef.cells[possibleWorldPos].areaParent != null)
+                    continue;
+
+                foreach (Vector2Int v in GetNeighbors(possibleWorldPos, largeChunkRef))
+                {
+                    if (!largeChunkRef.cells.ContainsKey(v)) continue;
+                    if (largeChunkRef.cells[v].CellType != CellType.HallwayEmpty) continue;
+                    if (newArea.cellMembers.ContainsKey(v)) continue;
+                    if (toBeAdded.Contains(v)) continue;
+
+                    toBeAdded.Add(v);
+                }
+
+                newArea.cellMembers.Add(possibleWorldPos, largeChunkRef.cells[possibleWorldPos]);
+                largeChunkRef.cells[possibleWorldPos].areaParent = newArea;
+                toBeRemoved.Add(possibleWorldPos);
+            }
+
+            HashSet<Vector2Int> toBeRemovedSet = new(toBeRemoved);
+            allPossibleCellPosesForArea.RemoveAll(e => toBeRemoved.Contains(e));
+            allPossibleCellPosesForArea.AddRange(toBeAdded);  // <- itt adjuk hozzá
+        }
+
+        return newArea;
+    }
+
     public GameObject CreateCellGameObject(Vector2Int worldPosition, CellType cellType)
     {
-        if (!map.ContainsKey(worldPosition) || cellType != CellType.Wall) return null;
+        GameObject gm = null;
 
-        GameObject gm = Instantiate(_wallPart);
-        gm.transform.position = new Vector3(
-            (worldPosition.x * 2),
-            1,
-            (worldPosition.y * 2)
-        );
+        if (cellType == CellType.Wall)
+        {
+            gm = Instantiate(_wallPart);
+            gm.transform.position = new Vector3(
+                (worldPosition.x * 2),
+                1,
+                (worldPosition.y * 2)
+            );
+        }
+        else if (cellType == CellType.LightEmpty)
+        {
+            gm = Instantiate(_lightPart);
+            gm.transform.position = new Vector3(
+                (worldPosition.x * 2),
+                1,
+                (worldPosition.y * 2)
+            );
+        }
 
         return gm;
     }
@@ -435,16 +536,6 @@ public class ACGen : MonoBehaviour
         }
 
         return returnValue;
-    }
-
-    private void ClearMap()
-    {
-        map.Clear();
-
-        foreach (KeyValuePair<Vector2Int, GameObject> pair in world)
-            Destroy(pair.Value);
-
-        world.Clear();
     }
 
     [SerializeField] WorldTracker worldTracker;

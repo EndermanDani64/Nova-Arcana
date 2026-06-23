@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
-using static ACGen;
 
 public class ChunkGenerationManager : MonoBehaviour
 {
@@ -15,10 +15,10 @@ public class ChunkGenerationManager : MonoBehaviour
     public Dictionary<Vector2Int, SmallChunk> activeRooms;
     public Dictionary<Vector2Int, Cell> cellWorld;
 
-    [SerializeField] private int largeChunkRenderDistance = 1; // ha jól tudom tényleg large chunkokkal foglalkozik, de az átnevezés csak egy tipp. eredeti: renderDistance
-    [SerializeField] private int smallChunkRenderDistance = 6;
-    public static int smallChunkSize = 10;
-    public static int largeChunkSize = 20; // 50
+    public int largeChunkRenderDistance = 2; // ha jól tudom tényleg large chunkokkal foglalkozik, de az átnevezés csak egy tipp. eredeti: renderDistance
+    public int smallChunkRenderDistance = 1;
+    public int smallChunkSize = 10;
+    public int largeChunkSize = 20; // 50
 
     private void Start()
     {
@@ -37,30 +37,21 @@ public class ChunkGenerationManager : MonoBehaviour
 
     private void ManageSmallChunkVisibility()
     {
-        // --- SmallChunk/Cell réteg (SetActive) ---
-        // Ez a már Enable-olt LargeChunk-okon belül dolgozik
         foreach (KeyValuePair<Vector2Int, SmallChunk> pair in smallChunks)
         {
             SmallChunk chunk = pair.Value;
+            float dist = Vector2Int.Distance(pair.Value.worldPosition, new Vector2Int(Mathf.RoundToInt(worldTracker.playerTransformPos.position.x), Mathf.RoundToInt(worldTracker.playerTransformPos.position.z)));
 
-            // SmallChunk localPosition = SmallChunk-index a LargeChunk-on belül
-            // Ehhez kell a globális SmallChunk-index:
-            // a LargeChunk-index * 5 + localPosition
-            // De egyszerűbb a worldPosition alapján számolni
-            Vector2Int chunkSmallIndex = new Vector2Int(
-                Mathf.FloorToInt((float)chunk.worldPosition.x / smallChunkSize),
-                Mathf.FloorToInt((float)chunk.worldPosition.y / smallChunkSize)
-            );
-
-            float dist = Vector2Int.Distance(chunkSmallIndex, worldTracker.playerRoomPosition);
+            Debug.Log($"Smallchunk count: {smallChunks.Count}");
 
             if (dist <= smallChunkRenderDistance)
             {
-                if (!chunk.Active) chunk.EnableSmallChunk();
+                chunk.LoadChunk();
             }
             else
             {
-                if (chunk.Active) chunk.DisableSmallChunk();
+                Debug.Log($"unload, dist: {dist}, smallChunkRenderDistance : {smallChunkRenderDistance}");
+                chunk.UnloadChunk();
             }
         }
     }
@@ -73,8 +64,7 @@ public class ChunkGenerationManager : MonoBehaviour
         ManageSmallChunkVisibility();
 
         // Generálás csak ha kell, és nem fut már
-        if (!isGenerating)
-            StartCoroutine(GenerateNewChunksIfNeeded());
+        StartCoroutine(GenerateNewChunksIfNeeded());
     }
 
     private IEnumerator GenerateNewChunksIfNeeded()
@@ -84,25 +74,30 @@ public class ChunkGenerationManager : MonoBehaviour
         // --- LargeChunk réteg ---
         // playerRoomPosition SmallChunk-index → LargeChunk-index
         Vector2Int playerLargeChunkIndex = new Vector2Int(
-            Mathf.FloorToInt((float)worldTracker.playerRoomPosition.x / (largeChunkSize / smallChunkSize)),
-            Mathf.FloorToInt((float)worldTracker.playerRoomPosition.y / (largeChunkSize / smallChunkSize))
+            Mathf.FloorToInt((float)worldTracker.playerSmallChunkPosition.x / (largeChunkSize / smallChunkSize)),
+            Mathf.FloorToInt((float)worldTracker.playerSmallChunkPosition.y / (largeChunkSize / smallChunkSize))
         );
 
         // Melyik LargeChunk-oknak kell létezni (játékos + 1 körös gyűrű)
-        HashSet<Vector2Int> neededLargeChunks = new();
         for (int x = -1; x <= 1; x++)
-            for (int y = -1; y <= 1; y++)
-                neededLargeChunks.Add(playerLargeChunkIndex + new Vector2Int(x, y));
-
-        // LargeChunk-ok amik kellenek de még nem léteznek
-        foreach (Vector2Int idx in neededLargeChunks)
         {
-            if (largeChunks.ContainsKey(idx)) continue;
+            for (int y = -1; y <= 1; y++)
+            {
+                Vector2Int currentLargeChunkIndexPos = playerLargeChunkIndex + new Vector2Int(x, y);
+                Vector2Int currentLargeChunkWorldPos = (playerLargeChunkIndex + new Vector2Int(x, y)) * largeChunkSize;
 
-            LargeChunk newChunk = new LargeChunk(idx, acgRef);
-            largeChunks.Add(idx, newChunk);
+                //Debug.Log($"distance: {Vector2Int.Distance(currentLargeChunkWorldPos, playerLargeChunkIndex * largeChunkSize)}, currentLargeChunkPos : {currentLargeChunkIndexPos}, currentLargeChunkWorldPos : {currentLargeChunkWorldPos}");
 
-            yield return null; // következő frame-re vár, nem fagy le
+                int chebyshevDist = Mathf.Max(Mathf.Abs(x), Mathf.Abs(y));
+                if (largeChunks.ContainsKey(currentLargeChunkIndexPos) || chebyshevDist > largeChunkRenderDistance) continue;
+
+                LargeChunk newChunk = new LargeChunk(acgRef, this);
+                largeChunks.Add(currentLargeChunkIndexPos, newChunk);
+
+                newChunk.GenerateLargeChunk(currentLargeChunkIndexPos, worldTracker);
+
+                yield return null;
+            }
         }
 
         isGenerating = false;
@@ -115,7 +110,10 @@ public class ChunkGenerationManager : MonoBehaviour
 
 public class Cell
 {
-    public GameObject GObject;
+    public GameObject wallGameObject;
+    public GameObject ceilingGameObject;
+    public GameObject lightGameObject;
+
     public Vector2Int WorldPosition;
 
     public CellType CellType
@@ -130,10 +128,14 @@ public class Cell
     }
     private CellType _cellType;
 
+    public SmallChunk parentChunk;
+    public Area areaParent;
+
     public int WallWeight = -1;
 
-    public Cell(CellType cellType)
+    public Cell(CellType cellType, Vector2Int worldPos)
     {
+        WorldPosition = worldPos;
         this.CellType = cellType;
         if (cellType == CellType.Wall) WallWeight = 0;
     }
@@ -141,7 +143,7 @@ public class Cell
 
 public class SmallChunk
 {
-    private bool _exists = true;
+    public bool Exists = true;
     public bool Active = true;
 
     /// <summary>
@@ -149,6 +151,7 @@ public class SmallChunk
     /// </summary>
     public Dictionary<Vector2Int, Cell> cells = new();
     private LargeChunk _parentChunkRef;
+    private ChunkGenerationManager _cgmRef;
 
     // ezeket generálásnál beállítom
     public Vector2Int localPosition;
@@ -156,16 +159,19 @@ public class SmallChunk
 
     private Vector2Int _worldOriginPos;
 
-    public SmallChunk(LargeChunk reference, Vector2Int localPosition, Vector2Int worldPosition)
+    public SmallChunk(LargeChunk reference, ChunkGenerationManager cgmRef, Vector2Int localPosition, Vector2Int worldPosition)
     {
         _parentChunkRef = reference;
+        _cgmRef = cgmRef;
 
         this.localPosition = localPosition;
         this.worldPosition = worldPosition;
 
+        cgmRef.smallChunks.Add(worldPosition, this);
+
         _worldOriginPos = new Vector2Int(
-            this.worldPosition.x - (ChunkGenerationManager.smallChunkSize / 2),
-            this.worldPosition.y - (ChunkGenerationManager.smallChunkSize / 2)
+            this.worldPosition.x - (cgmRef.smallChunkSize / 2),
+            this.worldPosition.y - (cgmRef.smallChunkSize / 2)
         );
     }
 
@@ -175,8 +181,8 @@ public class SmallChunk
 
         foreach (KeyValuePair<Vector2Int, Cell> pair in cells)
         {
-            if (pair.Value.GObject.activeSelf) continue;
-            pair.Value.GObject.SetActive(true);
+            if (pair.Value.wallGameObject.activeSelf) continue;
+            pair.Value.wallGameObject.SetActive(true);
         }
 
         Active = true;
@@ -188,8 +194,8 @@ public class SmallChunk
 
         foreach (KeyValuePair<Vector2Int, Cell> pair in cells)
         {
-            if (!pair.Value.GObject.activeSelf) continue;
-            pair.Value.GObject.SetActive(false);
+            if (pair.Value.wallGameObject == null || !pair.Value.wallGameObject.activeSelf) continue;
+            pair.Value.wallGameObject.SetActive(false);
         }
 
         Active = false;
@@ -197,33 +203,44 @@ public class SmallChunk
 
     public void LoadChunk()
     {
-        if (_exists) return;
+        if (Exists) return;
 
-        _exists = true;
+        Exists = true;
 
         foreach (KeyValuePair<Vector2Int, Cell> pair in cells)
         {
-            pair.Value.GObject = _parentChunkRef.acgRef.CreateCellGameObject(pair.Key, pair.Value.CellType);
+            pair.Value.wallGameObject = _parentChunkRef.acgRef.CreateCellGameObject(pair.Key, pair.Value.CellType);
         }
     }
 
     public void UnloadChunk()
     {
-        if (!_exists) return;
+        Debug.Log("unload 0");
 
-        _exists = false;
+        if (!Exists) return;
+
+        Debug.Log($"unload 1, smallchunk cells db: {cells.Count}");
 
         foreach (KeyValuePair<Vector2Int, Cell> pair in cells)
         {
-            _parentChunkRef.acgRef.DestroyCellGameObject(pair.Value.GObject);
+            switch (pair.Value.CellType)
+            {
+                case CellType.Wall:
+                    _parentChunkRef.acgRef.DestroyCellGameObject(pair.Value.wallGameObject);
+                    break;
+                case CellType.LightEmpty:
+                    _parentChunkRef.acgRef.DestroyCellGameObject(pair.Value.lightGameObject);
+                    break;
+            }
         }
+        Exists = false;
+        Debug.Log("unload 2");
     }
 }
 
 public class LargeChunk
 {
     public bool IsEnabled = true;
-    private bool isGenerated = false;
 
     /// <summary>
     /// Vector2Int: local pos for now
@@ -234,14 +251,17 @@ public class LargeChunk
     /// Vector2Int: world pos
     /// </summary>
     public Dictionary<Vector2Int, Cell> cells = new();
+    public List<Area> areas = new();
 
-    public Vector2Int largeChunkPivot = Vector2Int.zero;
+    public Vector2Int largeChunkWorldPivotPos = Vector2Int.zero;
+
+    public int notCategorisedCells = 0;
 
     /// <param name="thisLargeChunkPos">The current instance of LargeChunk's world position (Vector2Int)</param>
-    public LargeChunk(Vector2Int thisLargeChunkPos, ACGen acgRef)
+    public LargeChunk(ACGen acgRef, ChunkGenerationManager cgmRef)
     {
         this.acgRef = acgRef;
-        GenerateLargeChunk(thisLargeChunkPos);
+        this.cgmRef = cgmRef;
     }
 
     public void EnableLargeChunk()
@@ -268,57 +288,145 @@ public class LargeChunk
     /// <param name="cell"></param>
     public void AddCell(Cell cell)
     {
-        Vector2Int origin = largeChunkPivot - new Vector2Int(Mathf.RoundToInt(ChunkGenerationManager.largeChunkSize / 2), Mathf.RoundToInt(ChunkGenerationManager.largeChunkSize / 2));
+        Vector2Int origin = largeChunkWorldPivotPos - new Vector2Int(cgmRef.largeChunkSize / 2, cgmRef.largeChunkSize / 2);
         Vector2Int worldPos = cell.WorldPosition - origin;
-        Vector2Int smallChunkKey = worldPos / ChunkGenerationManager.smallChunkSize;
+        Vector2Int smallChunkKey = worldPos / cgmRef.smallChunkSize;
 
         this.cells.Add(cell.WorldPosition, cell);
-        smallChunks[smallChunkKey].cells.Add(worldPos, cell); // key volt az index (mellékes)
+        smallChunks[smallChunkKey].cells.Add(cell.WorldPosition, cell); // key volt az index (mellékes)
     }
 
-    private void GenerateLargeChunk(Vector2Int nextLargeChunkPos)
+    public void GenerateLargeChunk(Vector2Int nextLargeChunkPos, WorldTracker tracker)
     {
-        int largeChunkSize = ChunkGenerationManager.largeChunkSize;
+        int largeChunkSize = cgmRef.largeChunkSize;
 
-        largeChunkPivot = new(
+        largeChunkWorldPivotPos = new(
             nextLargeChunkPos.x * largeChunkSize,
             nextLargeChunkPos.y * largeChunkSize
         );
 
-        int indexPosX = -1 * (largeChunkSize / 2);
-        int indexPosZ = largeChunkSize / 2;
-
-        for (int worldX = Mathf.RoundToInt(largeChunkPivot.x - (largeChunkSize / 2)); worldX < largeChunkPivot.x + (largeChunkSize / 2); worldX++, indexPosX++)
+        for (int worldX = Mathf.RoundToInt(largeChunkWorldPivotPos.x - (largeChunkSize / 2)); worldX < largeChunkWorldPivotPos.x + (largeChunkSize / 2); worldX++)
         {
-            for (int worldZ = Mathf.RoundToInt(largeChunkPivot.y - (largeChunkSize / 2)); worldZ < largeChunkPivot.y + (largeChunkSize / 2); worldZ++, indexPosZ++)
+            for (int worldZ = Mathf.RoundToInt(largeChunkWorldPivotPos.y - (largeChunkSize / 2)); worldZ < largeChunkWorldPivotPos.y + (largeChunkSize / 2); worldZ++)
             {
-                //Debug.Log($"{worldX}, {worldZ}");
                 Vector2Int currentWorldPos = new Vector2Int(worldX, worldZ);
-
                 Vector2Int currentSmallChunkIndexPos = new Vector2Int(
-                    Mathf.FloorToInt((float)(worldX - (largeChunkPivot.x - largeChunkSize / 2)) / ChunkGenerationManager.smallChunkSize),
-                    Mathf.FloorToInt((float)(worldZ - (largeChunkPivot.y - largeChunkSize / 2)) / ChunkGenerationManager.smallChunkSize)
+                    Mathf.FloorToInt((float)(worldX - (largeChunkWorldPivotPos.x - largeChunkSize / 2)) / cgmRef.smallChunkSize),
+                    Mathf.FloorToInt((float)(worldZ - (largeChunkWorldPivotPos.y - largeChunkSize / 2)) / cgmRef.smallChunkSize)
                 );
 
-                if (smallChunks.ContainsKey(currentSmallChunkIndexPos)) continue;
+                if (smallChunks.ContainsKey(currentSmallChunkIndexPos)/* || 
+                    Vector2Int.Distance(currentSmallChunkIndexPos * cgmRef.smallChunkSize, tracker.playerSmallChunkPosition) > cgmRef.smallChunkRenderDistance*/) 
+                    continue;
 
-                SmallChunk newSmallChunk = new SmallChunk(this, currentSmallChunkIndexPos, currentWorldPos);
-                newSmallChunk.worldPosition = currentWorldPos;
-                newSmallChunk.localPosition = currentSmallChunkIndexPos;
-
+                SmallChunk newSmallChunk = new SmallChunk(this, cgmRef, currentSmallChunkIndexPos, currentWorldPos);
                 smallChunks.Add(
                     currentSmallChunkIndexPos, newSmallChunk
                 );
             }
         }
 
-        acgRef.FillWithWalls(this);
-        GenerateMap(acgRef.labirynthCount, this);
+        acgRef.StartCoroutine(acgRef.FillWithWalls(this));
+        acgRef.StartCoroutine(acgRef.GenerateMap(acgRef.labirynthCount, this));
+        acgRef.StartCoroutine(acgRef.GenerateRooms(30, this)); // Random.Range(12, 18)
+        acgRef.StartCoroutine(acgRef.MakePatches(60, this)); // 250
 
-        acgRef.MakePatches(1, this);
-        acgRef.GenerateRooms(Random.Range(4, 10), this);
-        //acgRef.GenerateWallBlocks(1);
+        //areas.Add(acgRef.MakeArea(this));
+
+        /*acgRef.FillWithWalls(this);
+        GenerateMap(acgRef.labirynthCount, this);
+        acgRef.GenerateRooms(30, this);
+        acgRef.MakePatches(15, this);
+
+        // notCategorisedCells feltöltése a generálás után
+        notCategorisedCells = 0;
+        foreach (KeyValuePair<Vector2Int, Cell> pair in cells)
+        {
+            if (pair.Value.CellType == CellType.HallwayEmpty)
+                notCategorisedCells++;
+        }
+
+        Debug.Log($"1, notCategorisedCells amount: {notCategorisedCells}");
+
+        Area newArea = acgRef.MakeArea(this);
+        if (newArea != null)
+        {
+            areas.Add(newArea);
+
+            // notCategorisedCells frissítése
+            notCategorisedCells -= newArea.cellMembers.Count;
+        }
+
+        Debug.Log($"2, notCategorisedCells amount: {notCategorisedCells}");*/
+
+        // Area-k generálása amíg van kategorizálatlan cella
+        /*while (notCategorisedCells > 0)
+        {
+            Area newArea = acgRef.MakeArea(this);
+            if (newArea == null) break;
+
+            areas.Add(newArea);
+
+            // notCategorisedCells frissítése
+            notCategorisedCells -= newArea.cellMembers.Count;
+        }
+
+        Debug.Log("2");
+
+        foreach (Area area in areas)
+        {
+            if (area.cellMembers.Count <= 5)
+            {
+                area.FillWholeArea();
+            }
+        }*/
     }
 
     public ACGen acgRef;
+    public ChunkGenerationManager cgmRef;
+}
+
+public class Area
+{
+    public string biomeName;
+    public BiomeType biomeType;
+
+    public int CellCount = 0;
+
+    /// <summary>
+    /// Key: World Position
+    /// </summary>
+    public Dictionary<Vector2Int, Cell> cellMembers = new();
+
+    public Area(LargeChunk largeChunkRef)
+    {
+        parentChunk = largeChunkRef;
+    }
+
+    public void FillWholeArea()
+    {
+        foreach (KeyValuePair<Vector2Int, Cell> pair in cellMembers)
+        {
+            Cell currentCell = pair.Value;
+            currentCell.wallGameObject = parentChunk.acgRef.CreateCellGameObject(pair.Key, CellType.Wall);
+            currentCell.CellType = CellType.Wall;
+        }
+        this.Dispose();
+    }
+
+    private void Dispose()
+    {
+        parentChunk = null;
+        biomeName = null;
+        CellCount = -1;
+        cellMembers = null;
+    }
+
+    private LargeChunk parentChunk;
+}
+
+public enum BiomeType
+{
+    Yellow_Halls,
+    DEV_Halls
 }
