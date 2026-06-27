@@ -1,4 +1,7 @@
+using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
+using Unity.VisualScripting;
 
 public class PlayerMovment : MonoBehaviour
 {
@@ -11,14 +14,16 @@ public class PlayerMovment : MonoBehaviour
     [SerializeField] private LayerMask ground;
     bool _isGrounded;
 
-    [Header("References")]
-    [SerializeField] private Transform orientation;
-
     float _horizontalInput;
     float _verticalInput;
 
     Vector3 _moveDir;
     Rigidbody rigidBody;
+
+    // sound stuff
+
+    List<string> footstepParameterNames;
+    bool _canPlayFootstep = true;
 
     // unity methods
 
@@ -26,6 +31,8 @@ public class PlayerMovment : MonoBehaviour
     {
         rigidBody = GetComponent<Rigidbody>();
         rigidBody.freezeRotation = true;
+
+        footstepParameterNames = new() { "Footstep_1", "Footstep_2", "Footstep_3", "Footstep_4", "Footstep_5" };
 
         playerRef = gameObject.GetComponent<Player>();
     }
@@ -39,6 +46,10 @@ public class PlayerMovment : MonoBehaviour
         if (_isGrounded) rigidBody.linearDamping = groundDrag;
         else rigidBody.linearDamping = 0;
 
+        Debug.Log($"rigidBody.linearVelocity: {rigidBody.linearVelocity}");
+        if (_canPlayFootstep && _isGrounded && (Mathf.Abs(rigidBody.linearVelocity.x) > 2.6 || Mathf.Abs(rigidBody.linearVelocity.z) > 2.6))
+            StartCoroutine(PlayFootstep());
+
         CheckRunning();
     }
 
@@ -51,9 +62,11 @@ public class PlayerMovment : MonoBehaviour
 
     private void MovePlayer()
     {
+        //if (!_isGrounded) return;
+
         // calc movent dir
         _moveDir = orientation.forward * _verticalInput + orientation.right * _horizontalInput;
-
+       
         if (!playerRef.staminaRegen)
             rigidBody.AddForce(_moveDir.normalized * movmentSpeed * 17f, ForceMode.Force);
         else
@@ -77,6 +90,20 @@ public class PlayerMovment : MonoBehaviour
         }
     }
 
+    private IEnumerator PlayFootstep()
+    {
+        _canPlayFootstep = false;
+
+        footstepsEmmiter.Play();
+
+        float waitTime = .55f;
+        if (Input.GetKey(KeyCode.LeftShift)) waitTime -= .15f;
+
+        yield return new WaitForSeconds(waitTime);
+
+        _canPlayFootstep = true;
+    }
+
     // base methods
 
     /// <summary>
@@ -88,5 +115,9 @@ public class PlayerMovment : MonoBehaviour
         _verticalInput = Input.GetAxisRaw("Vertical");
     }
 
-    private Player playerRef;
+    [Header("References")]
+
+    [SerializeField] private Transform orientation;
+    [SerializeField] private Player playerRef;
+    [SerializeField] private FMODUnity.StudioEventEmitter footstepsEmmiter;
 }

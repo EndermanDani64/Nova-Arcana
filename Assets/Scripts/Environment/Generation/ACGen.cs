@@ -1,4 +1,3 @@
-using JetBrains.Annotations;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,38 +6,82 @@ using UnityEngine;
 public enum CellType
 {
     Wall,
+    OptimizedWall,
     HallwayEmpty,
     RoomEmpty,
     LightEmpty
+}
+
+public enum Biome
+{
+    ScatteredRooms_Lit,
+    ScatteredRooms_Dark
 }
 
 public class ACGen : MonoBehaviour
 {
     //public int renderDist = 2;
     public Vector2Int center = new Vector2Int(0, 0);
-    [SerializeField] private GameObject _wallPart;
-    public GameObject _ceilingPart;
-    public GameObject _lightPart;
 
     [Space]
 
-    public int labirynthCount = 20; // 30
-    [SerializeField] int roomCount = 10; // 10
-    [SerializeField] int wallBlockCount = 10; // 10
+    public int labirynthCount;
+    public int roomCount;
+    public int patchIterationCount;
 
     [Space]
 
-    [SerializeField] float STOP_COLLISION_PROBABILITY = 0.08f;
-    [SerializeField] float mapFillPrecentage = 0f;
-    [SerializeField] float randomFactorForDoors = 1f;
-    int randomRoomMinSize = 2; // 5
-    int randomRoomMaxSize = 4; // 15
-    /*int ceilingLightDistance = 1;
-    int lightCounter = 1;*/
+    [SerializeField] float STOP_COLLISION_PROBABILITY;
+    [SerializeField] float randomFactorForDoors;
+
+    [Space]
+
+    [SerializeField] int randomRoomMinSize;
+    [SerializeField] int randomRoomMaxSize;
+
+    [Space]
+
+    public Dictionary<Biome, int> _BiomeGenData_LabirynthCount;
+    public Dictionary<Biome, int> _BiomeGenData_RoomCount; 
+    public Dictionary<Biome, int> _BiomeGenData_PatchIterationCount;
+
+    [SerializeField] Dictionary<Biome, int> _BiomeGenData_RoomMinSizeByBiome;
+    [SerializeField] Dictionary<Biome, int> _BiomeGenData_RoomMaxSizeByBiome;
+
+    [SerializeField] Dictionary<Biome, float> _BiomeGenData_stopCollisionProbality;
+    [SerializeField] Dictionary<Biome, float> _BiomeGenData_RandomFactorForDoors;
+
+    [Space]
+
+    [SerializeField] float lightRandomness;
+
+    [Space]
+
+    public int seed = 0;
+    public float scale;
+
+    private void Start()
+    {
+        SetAllBiomeDictionaries();
+
+        if (seed == 0) seed = Random.Range(1, int.MaxValue); 
+        Random.InitState(seed);
+    }
 
     public IEnumerator GenerateMap(int labirynth, LargeChunk targetChunk)
     {
+        Dictionary<Biome, List<Cell>> biomes = new();
         List<Vector2Int> visitedCells = new();
+        
+        foreach (KeyValuePair<Vector2Int, Cell> pair in targetChunk.cells)
+        {
+            Cell c = pair.Value;
+
+            if (!biomes.ContainsKey(c.Biome))
+                biomes.Add(c.Biome, new() { c });
+            else
+                biomes[c.Biome].Add(c);
+        }
 
         for (int f = 0; f < labirynth; f++)
         {
@@ -55,13 +98,13 @@ public class ACGen : MonoBehaviour
             targetChunk.cells[parentPos].CellType = CellType.HallwayEmpty;
             Destroy(targetChunk.cells[parentPos].wallGameObject); // GENERATE FLOOR!!! IF WALKABLE/ EMPTY
 
-            if (Random.value < 1f)
+            if (Random.value < lightRandomness)
             {
                 targetChunk.cells[parentPos].lightGameObject = Instantiate(_lightPart);
                 targetChunk.cells[parentPos].lightGameObject.transform.position = new Vector3(
-                    targetChunk.cells[parentPos].WorldPosition.x * 2,
+                    targetChunk.cells[parentPos].WorldPosition.x * cgm.cellSize,
                     1,
-                    targetChunk.cells[parentPos].WorldPosition.y * 2
+                    targetChunk.cells[parentPos].WorldPosition.y * cgm.cellSize
                 );
                 targetChunk.cells[parentPos].CellType = CellType.LightEmpty;
             }
@@ -193,12 +236,20 @@ public class ACGen : MonoBehaviour
             cell.wallGameObject = null;
         }
 
-        /*foreach (Cell cell in toMakeWall) //<-- positioning the gm-s are offsetted by .5 (worldpos)
+        yield return null;
+    }
+
+    public IEnumerator OptimiseWalls(LargeChunk targetLargeChunk)
+    {
+        foreach (KeyValuePair<Vector2Int, Cell> pair in targetLargeChunk.cells)
         {
-            cell.CellType = CellType.Wall;
-            cell.GObject = Instantiate(_wallPart);
-            cell.GObject.transform.position = new Vector3(cell.WorldPosition.x, 1, cell.WorldPosition.y);
-        }*/
+            Cell currentCell = pair.Value;
+
+            if (currentCell.CellType != CellType.Wall || GetWallNeighbors(pair.Key, targetLargeChunk).Count < 4 || currentCell.wallGameObject == null) continue;
+
+            Destroy(currentCell.wallGameObject);
+            currentCell.CellType = CellType.OptimizedWall;
+        }
 
         yield return null;
     }
@@ -251,9 +302,9 @@ public class ACGen : MonoBehaviour
             int roomSizeX = Random.Range(randomRoomMinSize, randomRoomMaxSize);
             int roomSizeY = Random.Range(randomRoomMinSize, randomRoomMaxSize);
 
-            for (int roomX = centerPos.x - (Mathf.RoundToInt(roomSizeX / 2)); roomX < centerPos.x + (Mathf.RoundToInt(roomSizeX / 2)); roomX++)
+            for (int roomX = centerPos.x - (Mathf.RoundToInt(roomSizeX / cgm.cellSize)); roomX < centerPos.x + (Mathf.RoundToInt(roomSizeX / cgm.cellSize)); roomX++)
             {
-                for (int roomY = centerPos.y - (Mathf.RoundToInt(roomSizeY / 2)); roomY < centerPos.y + (Mathf.RoundToInt(roomSizeY / 2)); roomY++)
+                for (int roomY = centerPos.y - (Mathf.RoundToInt(roomSizeY / cgm.cellSize)); roomY < centerPos.y + (Mathf.RoundToInt(roomSizeY / cgm.cellSize)); roomY++)
                 {
                     Vector2Int roomPos = new Vector2Int(roomX, roomY);
 
@@ -317,9 +368,17 @@ public class ACGen : MonoBehaviour
                 if (cgm.cellWorld.ContainsKey(currentWorldPos)) continue;
 
                 Cell newCell = new(CellType.Wall, currentWorldPos); // !!! <- currentWorldPos : most akk melyik? (duplázott vagy nem)
-                newCell.WorldPosition = currentWorldPos;
-
                 largeChunk.AddCell(newCell);
+
+                float noise = Mathf.PerlinNoise(
+                    (newCell.WorldPosition.x * scale) + seed,
+                    (newCell.WorldPosition.y * scale) + seed
+                );
+
+                if (noise < .88)
+                    newCell.Biome = Biome.ScatteredRooms_Lit;
+                else
+                    newCell.Biome = Biome.ScatteredRooms_Dark;
 
                 newCell.wallGameObject = Instantiate(_wallPart);
                 newCell.wallGameObject.transform.position = new Vector3(
@@ -378,8 +437,6 @@ public class ACGen : MonoBehaviour
     {
         if (largeChunkRef.notCategorisedCells <= 0) return null;
 
-        Debug.Log("makearea");
-
         Cell currentCell;
         Area newArea = new(largeChunkRef);
 
@@ -409,7 +466,7 @@ public class ACGen : MonoBehaviour
         {
             temp++;
 
-            if (temp > 10) break;
+            if (temp > 3) break;
 
             List<Vector2Int> toBeRemoved = new();
             List<Vector2Int> toBeAdded = new();  // <- külön lista
@@ -423,10 +480,14 @@ public class ACGen : MonoBehaviour
                 foreach (Vector2Int v in GetNeighbors(possibleWorldPos, largeChunkRef))
                 {
                     if (!largeChunkRef.cells.ContainsKey(v)) continue;
-                    if (largeChunkRef.cells[v].CellType != CellType.HallwayEmpty) continue;
+                    Debug.Log("0");
+                    if (largeChunkRef.cells[v].CellType == CellType.Wall) continue;
+                    Debug.Log("1");
                     if (newArea.cellMembers.ContainsKey(v)) continue;
+                    Debug.Log("2");
                     if (toBeAdded.Contains(v)) continue;
 
+                    Debug.Log("added to toBeAdded list");
                     toBeAdded.Add(v);
                 }
 
@@ -445,6 +506,8 @@ public class ACGen : MonoBehaviour
 
     public GameObject CreateCellGameObject(Vector2Int worldPosition, CellType cellType)
     {
+        if (cellType == CellType.OptimizedWall) return null;
+
         GameObject gm = null;
 
         if (cellType == CellType.Wall)
@@ -516,27 +579,53 @@ public class ACGen : MonoBehaviour
         return neighbors;
     }
 
-    private int NeighbourCountByCellType(Cell mainCell, LargeChunk parentLargeChunk, CellType targetType)
+    private void SetAllBiomeDictionaries()
     {
-        Vector2Int currentIndexPos = new Vector2Int(
-            Mathf.FloorToInt((float)mainCell.WorldPosition.x / 2),
-            Mathf.FloorToInt((float)mainCell.WorldPosition.y / 2)
-        );
-
-        int returnValue = 0;
-
-        List<Vector2Int> neighbours = GetNeighbors(currentIndexPos, parentLargeChunk);
-
-        foreach (Vector2Int index in neighbours)
+        _BiomeGenData_LabirynthCount = new()
         {
-            if (!parentLargeChunk.cells.ContainsKey(index)) continue;
+            [Biome.ScatteredRooms_Lit] = 25,
+            [Biome.ScatteredRooms_Dark] = 25
+        };
+        _BiomeGenData_RoomCount = new()
+        {
+            [Biome.ScatteredRooms_Lit] = 14,
+            [Biome.ScatteredRooms_Dark] = 14
+        };
+        _BiomeGenData_PatchIterationCount = new()
+        {
+            [Biome.ScatteredRooms_Lit] = 60,
+            [Biome.ScatteredRooms_Dark] = 60
+        };
 
-            if (parentLargeChunk.cells[index].CellType == CellType.Wall)
-                returnValue++;
-        }
+        _BiomeGenData_RoomMinSizeByBiome = new()
+        {
+            [Biome.ScatteredRooms_Lit] = 2,
+            [Biome.ScatteredRooms_Dark] = 2
+        };
+        _BiomeGenData_RoomMaxSizeByBiome = new()
+        {
+            [Biome.ScatteredRooms_Lit] = 4,
+            [Biome.ScatteredRooms_Dark] = 4
+        };
 
-        return returnValue;
+        _BiomeGenData_stopCollisionProbality = new()
+        {
+            [Biome.ScatteredRooms_Lit] = 0.05f,
+            [Biome.ScatteredRooms_Dark] = 0.05f
+        };
+        _BiomeGenData_RandomFactorForDoors = new()
+        {
+            [Biome.ScatteredRooms_Lit] = 1,
+            [Biome.ScatteredRooms_Dark] = 1
+        };
     }
+
+    [Space]
+    [SerializeField] private GameObject _wallPart;
+    public GameObject _ceilingPart;
+    public GameObject _lightPart;
+
+    [Space]
 
     [SerializeField] WorldTracker worldTracker;
     [SerializeField] ChunkGenerationManager cgm;
