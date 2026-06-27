@@ -37,7 +37,7 @@ public class ChunkGenerationManager : MonoBehaviour
         GenerateNewChunks();
 
         worldTracker.playerLargeChunkPosChanged += GenerateNewChunks; 
-        worldTracker.playerSmallChunkPosChanged += ManageSmallChunkVisibility;
+        //worldTracker.playerSmallChunkPosChanged += ManageSmallChunkVisibility;
     }
 
     private void ManageSmallChunkVisibility()
@@ -60,9 +60,9 @@ public class ChunkGenerationManager : MonoBehaviour
     public IEnumerator GenerateSequentially(LargeChunk chunk)
     {
         yield return acgRef.StartCoroutine(acgRef.FillWithWalls(chunk));
-        yield return acgRef.StartCoroutine(acgRef.GenerateMap(acgRef.labirynthCount, chunk));
-        yield return acgRef.StartCoroutine(acgRef.GenerateRooms(acgRef.roomCount, chunk));
-        yield return acgRef.StartCoroutine(acgRef.MakePatches(acgRef.patchIterationCount, chunk));
+        yield return acgRef.StartCoroutine(acgRef.GenerateMap(chunk));
+        //yield return acgRef.StartCoroutine(acgRef.GenerateRooms(chunk));
+        yield return acgRef.StartCoroutine(acgRef.MakePatches(chunk));
         yield return acgRef.StartCoroutine(acgRef.OptimiseWalls(chunk));
     }
 
@@ -71,9 +71,9 @@ public class ChunkGenerationManager : MonoBehaviour
         StartCoroutine(GenerateNewChunksIfNeeded()); // StartCoroutine(GenerateNewChunksIfNeeded());
     }
 
-    private IEnumerator GenerateNewChunksIfNeeded() // IEnumerator
+    private IEnumerator GenerateNewChunksIfNeeded() 
     {
-        // Melyik LargeChunk-oknak kell létezni (játékos + 1 körös gyűrű)
+        // játékos + 1 körös gyűrű
         for (int x = -largeChunkRenderDistance; x <= largeChunkRenderDistance; x++)
         {   
             for (int y = -largeChunkRenderDistance; y <= largeChunkRenderDistance; y++)
@@ -84,7 +84,7 @@ public class ChunkGenerationManager : MonoBehaviour
                 //Debug.Log($"0, currentLargeChunkIndexPos: {currentLargeChunkIndexPos}, playerLCPos: {worldTracker.playerLargeChunkPosition}");
 
                 int chebyshevDist = Mathf.Max(Mathf.Abs(x), Mathf.Abs(y));
-                if (largeChunks.ContainsKey(currentLargeChunkIndexPos) /*|| chebyshevDist > largeChunkRenderDistance*/) continue;
+                if (largeChunks.ContainsKey(currentLargeChunkIndexPos)) continue;
 
                 /*Debug.Log($"generating, currentLargeChunkIndexPos: {currentLargeChunkIndexPos}, playerLCPos: {worldTracker.playerLargeChunkPosition}");
                 Debug.Log("");*/

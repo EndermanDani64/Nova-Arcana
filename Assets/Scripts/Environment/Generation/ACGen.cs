@@ -51,9 +51,7 @@ public class ACGen : MonoBehaviour
     [SerializeField] Dictionary<Biome, float> _BiomeGenData_stopCollisionProbality;
     [SerializeField] Dictionary<Biome, float> _BiomeGenData_RandomFactorForDoors;
 
-    [Space]
-
-    [SerializeField] float lightRandomness;
+    [SerializeField] Dictionary<Biome, float> _BiomeGenData_LightRandomness;
 
     [Space]
 
@@ -68,22 +66,140 @@ public class ACGen : MonoBehaviour
         Random.InitState(seed);
     }
 
-    public IEnumerator GenerateMap(int labirynth, LargeChunk targetChunk)
+    public IEnumerator GenerateMap(LargeChunk targetChunk)
     {
-        Dictionary<Biome, List<Cell>> biomes = new();
-        List<Vector2Int> visitedCells = new();
-        
-        foreach (KeyValuePair<Vector2Int, Cell> pair in targetChunk.cells)
-        {
-            Cell c = pair.Value;
+        Dictionary<Biome, Dictionary<Vector2Int, Cell>> biomes = GetCellsByBiome(targetChunk);
 
-            if (!biomes.ContainsKey(c.Biome))
-                biomes.Add(c.Biome, new() { c });
-            else
-                biomes[c.Biome].Add(c);
+        foreach (var biomeDataPair in biomes)
+        {
+            Biome currentBiome = biomeDataPair.Key;
+            Dictionary<Vector2Int, Cell> cells = biomeDataPair.Value;
+            List<Vector2Int> visitedCells = new();
+
+            for (int f = 0; f < _BiomeGenData_LabirynthCount[currentBiome]; f++)
+            {
+                int randPosIndex = Random.Range(0, cells.Count);
+                Vector2Int parentPos = cells.ElementAt(randPosIndex).Key;
+
+                if (!visitedCells.Contains(parentPos))
+                    visitedCells.Add(parentPos);
+
+                // generate walkable area
+
+                if (!cells.ContainsKey(parentPos)) continue;
+
+                cells[parentPos].CellType = CellType.HallwayEmpty;
+                Destroy(cells[parentPos].wallGameObject); // GENERATE FLOOR!!! IF WALKABLE/ EMPTY
+
+                if (Random.value < _BiomeGenData_LightRandomness[currentBiome])
+                {
+                    cells[parentPos].lightGameObject = Instantiate(_lightPart);
+                    cells[parentPos].lightGameObject.transform.position = new Vector3(
+                        cells[parentPos].WorldPosition.x * cgm.cellSize,
+                        1,
+                        cells[parentPos].WorldPosition.y * cgm.cellSize
+                    );
+                    cells[parentPos].CellType = CellType.LightEmpty;
+                }
+
+                // start of the main logic
+
+                Dictionary<Vector2Int, Vector2Int> frontier = new();
+
+                foreach (Vector2Int childP in GetNeighbors(parentPos, cells)) // !!!!!!!!!!! I need to change GetNeighbour's logic to work only in the 
+                {
+                    if (frontier.ContainsKey(childP)) continue;
+                    frontier.Add(childP, parentPos);
+                }
+
+                while (frontier.Count > 0)
+                {
+                    int randChoice = Random.Range(0, frontier.Count - 1);
+                    Vector2Int childPos = frontier.ElementAt(randChoice).Key; 
+
+                    if (Random.value < _BiomeGenData_stopCollisionProbality[currentBiome])
+                    {
+                        frontier.Clear();
+                        continue;
+                    }
+
+                    if (cells[childPos].CellType == CellType.Wall)
+                    {
+                        cells[childPos].CellType = CellType.HallwayEmpty;
+                        Destroy(cells[childPos].wallGameObject);
+                        targetChunk.notCategorisedCells++; // ? which way is not categorized in the LargeChunk?? Could be connected to biomes?? Same for the all of these lines coming up
+
+                        Vector2Int doorwayPos = new();
+
+                        if (frontier[childPos].y > childPos.y && frontier[childPos].x == childPos.x)
+                        {
+                            doorwayPos = new Vector2Int(childPos.x, childPos.y + 1);
+
+                            if (cells.ContainsKey(doorwayPos) && cells[doorwayPos].CellType == CellType.Wall && Random.value < _BiomeGenData_RandomFactorForDoors[currentBiome])
+                            {
+                                cells[doorwayPos].CellType = CellType.HallwayEmpty;
+                                Destroy(cells[doorwayPos].wallGameObject);
+                                targetChunk.notCategorisedCells++;
+                            }
+                        }
+                        else if (frontier[childPos].y < childPos.y && frontier[childPos].x == childPos.x)
+                        {
+                            doorwayPos = new Vector2Int(childPos.x, childPos.y - 1);
+
+                            if (cells.ContainsKey(doorwayPos) && cells[doorwayPos].CellType == CellType.Wall && Random.value < _BiomeGenData_RandomFactorForDoors[currentBiome])
+                            {
+                                cells[doorwayPos].CellType = CellType.HallwayEmpty;
+                                Destroy(cells[doorwayPos].wallGameObject);
+                                targetChunk.notCategorisedCells++;
+                            }
+                        }
+                        else if (frontier[childPos].x > childPos.x && frontier[childPos].y == childPos.y)
+                        {
+                            doorwayPos = new Vector2Int(childPos.x + 1, childPos.y);
+
+                            if (cells.ContainsKey(doorwayPos) && cells[doorwayPos].CellType == CellType.Wall && Random.value < _BiomeGenData_RandomFactorForDoors[currentBiome])
+                            {
+                                cells[doorwayPos].CellType = CellType.HallwayEmpty;
+                                Destroy(cells[doorwayPos].wallGameObject);
+                                targetChunk.notCategorisedCells++;
+                            }
+                        }
+                        else if (frontier[childPos].x < childPos.x && frontier[childPos].y == childPos.y)
+                        {
+                            doorwayPos = new Vector2Int(childPos.x - 1, childPos.y);
+
+                            if (cells.ContainsKey(doorwayPos) && cells[doorwayPos].CellType == CellType.Wall && Random.value < _BiomeGenData_RandomFactorForDoors[currentBiome])
+                            {
+                                cells[doorwayPos].CellType = CellType.HallwayEmpty;
+                                Destroy(cells[doorwayPos].wallGameObject);
+                                targetChunk.notCategorisedCells++;
+                            }
+                        }
+
+                        List<Vector2Int> neighborList = new();
+
+                        foreach (Vector2Int childP in GetNeighbors(childPos, cells))
+                        {
+                            if (neighborList.Contains(childP)) continue;
+                            neighborList.Add(childP);
+                        }
+
+                        int randomIndex = Random.Range(0, neighborList.Count - 1);
+
+                        if (neighborList.Count > 0 && !frontier.ContainsKey(neighborList[randomIndex]))
+                        {
+                            frontier.Add(neighborList[randomIndex], childPos);
+                        }
+
+                        frontier.Remove(childPos);
+                    }
+                }
+            }
+
+            yield return null;
         }
 
-        for (int f = 0; f < labirynth; f++)
+        /*for (int f = 0; f < labirynth; f++)
         {
             int randPosIndex = Random.Range(0, targetChunk.cells.Count);
             Vector2Int parentPos = targetChunk.cells.ElementAt(randPosIndex).Key;
@@ -203,40 +319,49 @@ public class ACGen : MonoBehaviour
             }
         }
 
-        yield return null;
+        yield return null;*/
     }
 
-    public IEnumerator MakePatches(int loops, LargeChunk targetLargeChunk)
+    public IEnumerator MakePatches(LargeChunk targetChunk)
     {
-        List<Cell> toMakeWall = new();
-        List<Cell> toMakeEmpty = new();
+        Dictionary<Biome, Dictionary<Vector2Int, Cell>> biomes = GetCellsByBiome(targetChunk);
 
-        for (int _ = 0; _ < loops; _++)
+
+        foreach (var biomeDataPair in biomes)
         {
-            foreach (KeyValuePair<Vector2Int, Cell> pair in targetLargeChunk.cells)
+            Biome currentBiome = biomeDataPair.Key;
+            Dictionary<Vector2Int, Cell> cells = biomeDataPair.Value;
+
+            List<Cell> toMakeWall = new();
+            List<Cell> toMakeEmpty = new();
+
+            for (int _ = 0; _ < _BiomeGenData_PatchIterationCount[currentBiome]; _++)
             {
-                Cell currentCell = pair.Value;
-                int wallNeighbourCount = GetWallNeighbors(pair.Key, targetLargeChunk).Count;
-
-                if (currentCell.CellType == CellType.Wall && (wallNeighbourCount == 0 /*|| (Random.value < .001 && wallNeighbourCount <= 2)*/))
+                foreach (KeyValuePair<Vector2Int, Cell> pair in cells)
                 {
-                    toMakeEmpty.Add(currentCell);
-                    //Debug.Log($"key: {pair.Key}, celltype: {currentCell.CellType}, falak száma körülötte: {wallNeighbourCount}", currentCell.wallGameObject);
+                    Cell currentCell = pair.Value;
+                    int wallNeighbourCount = GetWallNeighbors(pair.Key, targetChunk).Count;
+
+                    if (currentCell.CellType == CellType.Wall && (wallNeighbourCount == 0 /*|| (Random.value < .001 && wallNeighbourCount <= 2)*/))
+                    {
+                        toMakeEmpty.Add(currentCell);
+                        //Debug.Log($"key: {pair.Key}, celltype: {currentCell.CellType}, falak száma körülötte: {wallNeighbourCount}", currentCell.wallGameObject);
+                    }
+
+                    /*if (currentCell.CellType == CellType.HallwayEmpty && wallNeighbourCount >= 3)
+                        toMakeWall.Add(currentCell);*/
                 }
-
-                /*if (currentCell.CellType == CellType.HallwayEmpty && wallNeighbourCount >= 3)
-                    toMakeWall.Add(currentCell);*/
             }
-        }
 
-        foreach (Cell cell in toMakeEmpty)
-        {
-            cell.CellType = CellType.HallwayEmpty;
-            Destroy(cell.wallGameObject);
-            cell.wallGameObject = null;
-        }
+            foreach (Cell cell in toMakeEmpty)
+            {
+                cell.CellType = CellType.HallwayEmpty;
+                Destroy(cell.wallGameObject);
+                cell.wallGameObject = null;
+            }
 
-        yield return null;
+            yield return null;
+        }    
     }
 
     public IEnumerator OptimiseWalls(LargeChunk targetLargeChunk)
@@ -285,38 +410,47 @@ public class ACGen : MonoBehaviour
         return neighbors;
     }
 
-    public IEnumerator GenerateRooms(int roomsCount, LargeChunk currentLargeChunk)
+    public IEnumerator GenerateRooms(LargeChunk targetChunk)
     {
-        List<Vector2Int> emptyParts = new();
+        Dictionary<Biome, Dictionary<Vector2Int, Cell>> biomes = GetCellsByBiome(targetChunk);
 
-        foreach (KeyValuePair<Vector2Int, Cell> pair in currentLargeChunk.cells)
+
+        foreach (var biomeDataPair in biomes)
         {
-            if (emptyParts.Contains(pair.Key)) continue;
-            emptyParts.Add(pair.Key);
-        }
+            Biome currentBiome = biomeDataPair.Key;
+            Dictionary<Vector2Int, Cell> cells = biomeDataPair.Value;
 
-        for (int f = 0; f < roomsCount; f++)
-        {
-            Vector2Int centerPos = emptyParts[Random.Range(0, emptyParts.Count - 1)];
+            List<Vector2Int> emptyParts = new();
 
-            int roomSizeX = Random.Range(randomRoomMinSize, randomRoomMaxSize);
-            int roomSizeY = Random.Range(randomRoomMinSize, randomRoomMaxSize);
-
-            for (int roomX = centerPos.x - (Mathf.RoundToInt(roomSizeX / cgm.cellSize)); roomX < centerPos.x + (Mathf.RoundToInt(roomSizeX / cgm.cellSize)); roomX++)
+            foreach (KeyValuePair<Vector2Int, Cell> pair in cells)
             {
-                for (int roomY = centerPos.y - (Mathf.RoundToInt(roomSizeY / cgm.cellSize)); roomY < centerPos.y + (Mathf.RoundToInt(roomSizeY / cgm.cellSize)); roomY++)
+                if (emptyParts.Contains(pair.Key)) continue;
+                emptyParts.Add(pair.Key);
+            }
+
+            for (int f = 0; f < _BiomeGenData_RoomCount[currentBiome]; f++)
+            {
+                Vector2Int centerPos = emptyParts[Random.Range(0, emptyParts.Count - 1)];
+
+                int roomSizeX = Random.Range(_BiomeGenData_RoomMinSizeByBiome[currentBiome], _BiomeGenData_RoomMaxSizeByBiome[currentBiome]);
+                int roomSizeY = Random.Range(_BiomeGenData_RoomMinSizeByBiome[currentBiome], _BiomeGenData_RoomMaxSizeByBiome[currentBiome]);
+
+                for (int roomX = centerPos.x - (Mathf.RoundToInt(roomSizeX / cgm.cellSize)); roomX < centerPos.x + (Mathf.RoundToInt(roomSizeX / cgm.cellSize)); roomX++)
                 {
-                    Vector2Int roomPos = new Vector2Int(roomX, roomY);
+                    for (int roomY = centerPos.y - (Mathf.RoundToInt(roomSizeY / cgm.cellSize)); roomY < centerPos.y + (Mathf.RoundToInt(roomSizeY / cgm.cellSize)); roomY++)
+                    {
+                        Vector2Int roomPos = new Vector2Int(roomX, roomY);
 
-                    if (!currentLargeChunk.cells.ContainsKey(roomPos)) continue;
+                        if (!cells.ContainsKey(roomPos)) continue;
 
-                    currentLargeChunk.cells[roomPos].CellType = CellType.RoomEmpty;
-                    Destroy(currentLargeChunk.cells[roomPos].wallGameObject);
+                        cells[roomPos].CellType = CellType.RoomEmpty;
+                        Destroy(cells[roomPos].wallGameObject);
+                    }
                 }
             }
-        }
 
-        yield return null;
+            yield return null;
+        }
     }
     
     /*public void GenerateWallBlocks(int wallBlocksCount)
@@ -375,7 +509,7 @@ public class ACGen : MonoBehaviour
                     (newCell.WorldPosition.y * scale) + seed
                 );
 
-                if (noise < .88)
+                if (noise < .8f)
                     newCell.Biome = Biome.ScatteredRooms_Lit;
                 else
                     newCell.Biome = Biome.ScatteredRooms_Dark;
@@ -404,7 +538,7 @@ public class ACGen : MonoBehaviour
         }
 
         int weight = 0;
-        List<Vector2Int> neighbors = GetNeighbors(targetCell.WorldPosition, targetChunk);
+        List<Vector2Int> neighbors = OGGetNeighbors(targetCell.WorldPosition, targetChunk);
 
         for (int depthC = 0; depthC < depthOfCalculation; depthC++)
         {
@@ -417,7 +551,7 @@ public class ACGen : MonoBehaviour
 
                 if (targetChunk.cells[pos].CellType == CellType.Wall)
                 {
-                    toAdd.AddRange(GetNeighbors(pos, targetChunk));
+                    toAdd.AddRange(OGGetNeighbors(pos, targetChunk));
                     weight++;
                 }
 
@@ -477,7 +611,7 @@ public class ACGen : MonoBehaviour
                     largeChunkRef.cells[possibleWorldPos].areaParent != null)
                     continue;
 
-                foreach (Vector2Int v in GetNeighbors(possibleWorldPos, largeChunkRef))
+                foreach (Vector2Int v in OGGetNeighbors(possibleWorldPos, largeChunkRef))
                 {
                     if (!largeChunkRef.cells.ContainsKey(v)) continue;
                     Debug.Log("0");
@@ -543,7 +677,7 @@ public class ACGen : MonoBehaviour
     /// pos parameter is a world position
     /// </summary>
     /// <returns></returns>
-    private static List<Vector2Int> GetNeighbors(Vector2Int pos, LargeChunk currentChunk)
+    private static List<Vector2Int> GetNeighbors(Vector2Int pos, Dictionary<Vector2Int, Cell> currentBiomeCellPair)
     {
         List<Vector2Int> neighbors = new();
 
@@ -554,22 +688,22 @@ public class ACGen : MonoBehaviour
         {
             randomIndex = Random.Range(1, 5);
 
-            if (randomIndex == 1 && !used.Contains(1) && currentChunk.cells.ContainsKey(new Vector2Int(pos.x - 2, pos.y)) && currentChunk.cells[new Vector2Int(pos.x - 2, pos.y)].CellType != CellType.HallwayEmpty && currentChunk.cells[new Vector2Int(pos.x - 2, pos.y)].CellType != CellType.RoomEmpty)
+            if (randomIndex == 1 && !used.Contains(1) && currentBiomeCellPair.ContainsKey(new Vector2Int(pos.x - 2, pos.y)) && currentBiomeCellPair[new Vector2Int(pos.x - 2, pos.y)].CellType != CellType.HallwayEmpty && currentBiomeCellPair[new Vector2Int(pos.x - 2, pos.y)].CellType != CellType.RoomEmpty)
             {
                 neighbors.Add(new Vector2Int(pos.x - 2, pos.y));
                 used.Add(1);
             }
-            if (randomIndex == 2 && !used.Contains(2) && currentChunk.cells.ContainsKey(new Vector2Int(pos.x + 2, pos.y)) && currentChunk.cells[new Vector2Int(pos.x + 2, pos.y)].CellType != CellType.HallwayEmpty && currentChunk.cells[new Vector2Int(pos.x + 2, pos.y)].CellType != CellType.RoomEmpty)
+            if (randomIndex == 2 && !used.Contains(2) && currentBiomeCellPair.ContainsKey(new Vector2Int(pos.x + 2, pos.y)) && currentBiomeCellPair[new Vector2Int(pos.x + 2, pos.y)].CellType != CellType.HallwayEmpty && currentBiomeCellPair[new Vector2Int(pos.x + 2, pos.y)].CellType != CellType.RoomEmpty)
             {
                 neighbors.Add(new Vector2Int(pos.x + 2, pos.y));
                 used.Add(2);
             }
-            if (randomIndex == 3 && !used.Contains(3) && currentChunk.cells.ContainsKey(new Vector2Int(pos.x, pos.y - 2)) && currentChunk.cells[new Vector2Int(pos.x, pos.y - 2)].CellType != CellType.HallwayEmpty && currentChunk.cells[new Vector2Int(pos.x, pos.y - 2)].CellType != CellType.RoomEmpty)
+            if (randomIndex == 3 && !used.Contains(3) && currentBiomeCellPair.ContainsKey(new Vector2Int(pos.x, pos.y - 2)) && currentBiomeCellPair[new Vector2Int(pos.x, pos.y - 2)].CellType != CellType.HallwayEmpty && currentBiomeCellPair[new Vector2Int(pos.x, pos.y - 2)].CellType != CellType.RoomEmpty)
             {
                 neighbors.Add(new Vector2Int(pos.x, pos.y - 2));
                 used.Add(3);
             }
-            if (randomIndex == 4 && !used.Contains(4) && currentChunk.cells.ContainsKey(new Vector2Int(pos.x, pos.y + 2)) && currentChunk.cells[new Vector2Int(pos.x, pos.y + 2)].CellType != CellType.HallwayEmpty && currentChunk.cells[new Vector2Int(pos.x, pos.y + 2)].CellType != CellType.RoomEmpty)
+            if (randomIndex == 4 && !used.Contains(4) && currentBiomeCellPair.ContainsKey(new Vector2Int(pos.x, pos.y + 2)) && currentBiomeCellPair[new Vector2Int(pos.x, pos.y + 2)].CellType != CellType.HallwayEmpty && currentBiomeCellPair[new Vector2Int(pos.x, pos.y + 2)].CellType != CellType.RoomEmpty)
             {
                 neighbors.Add(new Vector2Int(pos.x, pos.y + 2));
                 used.Add(4);
@@ -579,17 +713,73 @@ public class ACGen : MonoBehaviour
         return neighbors;
     }
 
+    /// <summary>
+    /// pos parameter is a world position
+    /// </summary>
+    /// <returns></returns>
+    private static List<Vector2Int> OGGetNeighbors(Vector2Int pos, LargeChunk targetChunk)
+    {
+        List<Vector2Int> neighbors = new();
+
+        List<int> used = new();
+        int randomIndex;
+
+        for (int i = 0; i < 4; i++)
+        {
+            randomIndex = Random.Range(1, 5);
+
+            if (randomIndex == 1 && !used.Contains(1) && targetChunk.cells.ContainsKey(new Vector2Int(pos.x - 2, pos.y)) && targetChunk.cells[new Vector2Int(pos.x - 2, pos.y)].CellType != CellType.HallwayEmpty && targetChunk.cells[new Vector2Int(pos.x - 2, pos.y)].CellType != CellType.RoomEmpty)
+            {
+                neighbors.Add(new Vector2Int(pos.x - 2, pos.y));
+                used.Add(1);
+            }
+            if (randomIndex == 2 && !used.Contains(2) && targetChunk.cells.ContainsKey(new Vector2Int(pos.x + 2, pos.y)) && targetChunk.cells[new Vector2Int(pos.x + 2, pos.y)].CellType != CellType.HallwayEmpty && targetChunk.cells[new Vector2Int(pos.x + 2, pos.y)].CellType != CellType.RoomEmpty)
+            {
+                neighbors.Add(new Vector2Int(pos.x + 2, pos.y));
+                used.Add(2);
+            }
+            if (randomIndex == 3 && !used.Contains(3) && targetChunk.cells.ContainsKey(new Vector2Int(pos.x, pos.y - 2)) && targetChunk.cells[new Vector2Int(pos.x, pos.y - 2)].CellType != CellType.HallwayEmpty && targetChunk.cells[new Vector2Int(pos.x, pos.y - 2)].CellType != CellType.RoomEmpty)
+            {
+                neighbors.Add(new Vector2Int(pos.x, pos.y - 2));
+                used.Add(3);
+            }
+            if (randomIndex == 4 && !used.Contains(4) && targetChunk.cells.ContainsKey(new Vector2Int(pos.x, pos.y + 2)) && targetChunk.cells[new Vector2Int(pos.x, pos.y + 2)].CellType != CellType.HallwayEmpty && targetChunk.cells[new Vector2Int(pos.x, pos.y + 2)].CellType != CellType.RoomEmpty)
+            {
+                neighbors.Add(new Vector2Int(pos.x, pos.y + 2));
+                used.Add(4);
+            }
+        }
+
+        return neighbors;
+    }
+
+    private Dictionary<Biome, Dictionary<Vector2Int, Cell>> GetCellsByBiome(LargeChunk targetChunk)
+    {
+        Dictionary<Biome, Dictionary<Vector2Int, Cell>> biomes = new();
+
+        foreach (KeyValuePair<Vector2Int, Cell> pair in targetChunk.cells)
+        {
+            Cell c = pair.Value;
+
+            if (!biomes.ContainsKey(c.Biome))
+                biomes.Add(c.Biome, new() { [pair.Key] = pair.Value });
+            else
+                biomes[c.Biome].Add(pair.Key, pair.Value);
+        }
+
+        return biomes;
+    }
     private void SetAllBiomeDictionaries()
     {
         _BiomeGenData_LabirynthCount = new()
         {
-            [Biome.ScatteredRooms_Lit] = 25,
-            [Biome.ScatteredRooms_Dark] = 25
+            [Biome.ScatteredRooms_Lit] = 13,
+            [Biome.ScatteredRooms_Dark] = 13
         };
         _BiomeGenData_RoomCount = new()
         {
-            [Biome.ScatteredRooms_Lit] = 14,
-            [Biome.ScatteredRooms_Dark] = 14
+            [Biome.ScatteredRooms_Lit] = 7,
+            [Biome.ScatteredRooms_Dark] = 10
         };
         _BiomeGenData_PatchIterationCount = new()
         {
@@ -600,23 +790,29 @@ public class ACGen : MonoBehaviour
         _BiomeGenData_RoomMinSizeByBiome = new()
         {
             [Biome.ScatteredRooms_Lit] = 2,
-            [Biome.ScatteredRooms_Dark] = 2
+            [Biome.ScatteredRooms_Dark] = 4
         };
         _BiomeGenData_RoomMaxSizeByBiome = new()
         {
             [Biome.ScatteredRooms_Lit] = 4,
-            [Biome.ScatteredRooms_Dark] = 4
+            [Biome.ScatteredRooms_Dark] = 8
         };
 
         _BiomeGenData_stopCollisionProbality = new()
         {
-            [Biome.ScatteredRooms_Lit] = 0.05f,
-            [Biome.ScatteredRooms_Dark] = 0.05f
+            [Biome.ScatteredRooms_Lit] = 0.005f,
+            [Biome.ScatteredRooms_Dark] = 0.005f
         };
         _BiomeGenData_RandomFactorForDoors = new()
         {
             [Biome.ScatteredRooms_Lit] = 1,
             [Biome.ScatteredRooms_Dark] = 1
+        };
+
+        _BiomeGenData_LightRandomness = new()
+        {
+            [Biome.ScatteredRooms_Lit] = 0.6f,
+            [Biome.ScatteredRooms_Dark] = 0f
         };
     }
 

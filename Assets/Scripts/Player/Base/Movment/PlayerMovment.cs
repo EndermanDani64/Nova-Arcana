@@ -46,7 +46,7 @@ public class PlayerMovment : MonoBehaviour
         if (_isGrounded) rigidBody.linearDamping = groundDrag;
         else rigidBody.linearDamping = 0;
 
-        Debug.Log($"rigidBody.linearVelocity: {rigidBody.linearVelocity}");
+        //Debug.Log($"rigidBody.linearVelocity: {rigidBody.linearVelocity}");
         if (_canPlayFootstep && _isGrounded && (Mathf.Abs(rigidBody.linearVelocity.x) > 2.6 || Mathf.Abs(rigidBody.linearVelocity.z) > 2.6))
             StartCoroutine(PlayFootstep());
 

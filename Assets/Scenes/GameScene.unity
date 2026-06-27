@@ -24,7 +24,7 @@ RenderSettings:
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
   m_AmbientIntensity: 1.17
-  m_AmbientMode: 0
+  m_AmbientMode: 3
   m_SubtractiveShadowColor: {r: 1, g: 0.8133648, b: 0.6839622, a: 1}
   m_SkyboxMaterial: {fileID: 2100000, guid: f11f2d5511c1bd04ca36120e88f50895, type: 2}
   m_HaloStrength: 0.504
@@ -422,20 +422,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ACGen
   center: {x: 0, y: 0}
-  _wallPart: {fileID: 5369011571374229315, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
-  _ceilingPart: {fileID: 8138144131423986242, guid: 8bbd73b30e138b2438211f3fb23c23fe, type: 3}
-  _lightPart: {fileID: 2315899929426710355, guid: 314faa11598cd254e90fee69466e88fc, type: 3}
   labirynthCount: 25
   roomCount: 14
   patchIterationCount: 60
   STOP_COLLISION_PROBABILITY: 0.005
-  mapFillPrecentage: 0
   randomFactorForDoors: 1
   randomRoomMinSize: 2
   randomRoomMaxSize: 4
-  lightRandomness: 0.6
-  seed: 0
-  scale: 0.1
+  seed: 44444
+  scale: 0.05
+  _wallPart: {fileID: 5369011571374229315, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
+  _ceilingPart: {fileID: 8138144131423986242, guid: 8bbd73b30e138b2438211f3fb23c23fe, type: 3}
+  _lightPart: {fileID: 2315899929426710355, guid: 314faa11598cd254e90fee69466e88fc, type: 3}
   worldTracker: {fileID: 2115761678}
   cgm: {fileID: 1176370724}
 --- !u!1 &330585543
@@ -1634,7 +1632,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 03baf9a64f1e3c24bb0833d3b6a1b126, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ChunkGenerationManager
-  largeChunkRenderDistance: 2
+  largeChunkRenderDistance: 3
   smallChunkRenderDistance: 4
   cellSize: 2
   smallChunkSize: 8
