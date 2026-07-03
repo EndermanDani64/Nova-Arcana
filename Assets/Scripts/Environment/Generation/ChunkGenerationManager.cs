@@ -37,7 +37,7 @@ public class ChunkGenerationManager : MonoBehaviour
         GenerateNewChunks();
 
         worldTracker.playerLargeChunkPosChanged += GenerateNewChunks; 
-        //worldTracker.playerSmallChunkPosChanged += ManageSmallChunkVisibility;
+        worldTracker.playerSmallChunkPosChanged += ManageSmallChunkVisibility;
     }
 
     private void ManageSmallChunkVisibility()
@@ -63,7 +63,9 @@ public class ChunkGenerationManager : MonoBehaviour
         yield return acgRef.StartCoroutine(acgRef.GenerateMap(chunk));
         //yield return acgRef.StartCoroutine(acgRef.GenerateRooms(chunk));
         yield return acgRef.StartCoroutine(acgRef.MakePatches(chunk));
-        yield return acgRef.StartCoroutine(acgRef.OptimiseWalls(chunk));
+        //yield return acgRef.StartCoroutine(acgRef.OptimiseWalls(chunk));
+
+        //areas.Add(acgRef.MakeArea(this));
     }
 
     private void GenerateNewChunks()
@@ -110,6 +112,7 @@ public class Cell
     public GameObject wallGameObject;
     public GameObject ceilingGameObject;
     public GameObject lightGameObject;
+    public GameObject doorGameObject;
 
     public Vector2Int WorldPosition;
 
@@ -178,8 +181,6 @@ public class SmallChunk
     {
         if (Active) return;
 
-        Debug.Log($"enabling: {this.localPosition}");
-
         foreach (KeyValuePair<Vector2Int, Cell> pair in cells)
         {
             if (pair.Value.wallGameObject != null)
@@ -198,8 +199,6 @@ public class SmallChunk
     public void DisableSmallChunk()
     {
         if (!Active) return;
-
-        Debug.Log($"disabling: {this.localPosition}");
 
         foreach (KeyValuePair<Vector2Int, Cell> pair in cells)
         {
@@ -227,7 +226,7 @@ public class SmallChunk
             if (pair.Value.CellType != CellType.Wall && pair.Value.CellType != CellType.LightEmpty) continue;
             
             pair.Value.wallGameObject = _parentChunkRef.acgRef.CreateCellGameObject(pair.Key, pair.Value.CellType);
-            pair.Value.wallGameObject.transform.position = new Vector3(pair.Value.WorldPosition.x * _parentChunkRef.cgmRef.cellSize, 1, pair.Value.WorldPosition.y * _parentChunkRef.cgmRef.cellSize);
+            pair.Value.wallGameObject.transform.position = new Vector3(pair.Value.WorldPosition.x /** _parentChunkRef.cgmRef.cellSize*/, 1, pair.Value.WorldPosition.y /** _parentChunkRef.cgmRef.cellSize*/);
         }
     }
 
@@ -243,7 +242,7 @@ public class SmallChunk
             }
             if (pair.Value.CellType == CellType.LightEmpty)
             {
-                Debug.Log("destroyed");
+                //Debug.Log("destroyed");
                 _parentChunkRef.acgRef.DestroyCellGameObject(pair.Value.lightGameObject);
             }
         }
@@ -285,7 +284,7 @@ public class LargeChunk
     public void AddCell(Cell cell)
     {
         Vector2Int origin = largeChunkWorldPivotPos - new Vector2Int(cgmRef.largeChunkSize / 2, cgmRef.largeChunkSize / 2);
-        Vector2Int worldPos = cell.WorldPosition - origin;
+        Vector2Int worldPos = (cell.WorldPosition / cgmRef.cellSize) - origin;
         Vector2Int smallChunkKey = worldPos / cgmRef.smallChunkSize;
 
         this.cells.Add(worldPos, cell); // cell.WorldPosition
@@ -323,6 +322,49 @@ public class LargeChunk
         }
 
         acgRef.StartCoroutine(cgmRef.GenerateSequentially(this));
+
+        // notCategorisedCells feltöltése a generálás után
+        /*notCategorisedCells = 0;
+        foreach (KeyValuePair<Vector2Int, Cell> pair in cells)
+        {
+            if (pair.Value.CellType == CellType.Wall)
+                notCategorisedCells++;
+        }
+
+        Debug.Log($"1, notCategorisedCells amount: {notCategorisedCells}");
+
+        Area newArea = acgRef.MakeArea(this, CellType.Wall);
+        if (newArea != null)
+        {
+            areas.Add(newArea);
+
+            // notCategorisedCells frissítése
+            notCategorisedCells -= newArea.cellMembers.Count;
+        }
+
+        Debug.Log($"2, notCategorisedCells amount: {notCategorisedCells}"); 
+
+        // Area-k generálása amíg van kategorizálatlan cella
+        while (notCategorisedCells > 0)
+        {
+            newArea = acgRef.MakeArea(this, CellType.Wall);
+            if (newArea == null) break;
+
+            areas.Add(newArea);
+
+            // notCategorisedCells frissítése
+            notCategorisedCells -= newArea.cellMembers.Count;
+        }
+
+        Debug.Log("2");
+
+        foreach (Area area in areas)
+        {
+            if (area.cellMembers.Count <= 3)
+            {
+                area.EmptyWholeArea();
+            }
+        }*/
     }
 
     public ACGen acgRef;
@@ -357,6 +399,18 @@ public class Area
 
             currentCell.wallGameObject = parentChunk.acgRef.CreateCellGameObject(pair.Key, CellType.Wall);
             currentCell.CellType = CellType.Wall;
+        }
+        this.Dispose();
+    }
+
+    public void EmptyWholeArea()
+    {
+        foreach (KeyValuePair<Vector2Int, Cell> pair in cellMembers)
+        {
+            Cell currentCell = pair.Value;
+
+            if (currentCell.CellType == CellType.Wall)
+                parentChunk.acgRef.DestroyCellGameObject(currentCell.wallGameObject);
         }
         this.Dispose();
     }

@@ -1,5 +1,32 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-8568448894391739652
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceb653cd98e289a4e8697a1af55201f2, type: 3}
+  m_Name: event:/DoorClose
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorEventRef
+  Path: event:/DoorClose
+  Guid:
+    Data1: 349586718
+    Data2: 1148644280
+    Data3: 811525517
+    Data4: -1806623985
+  Banks:
+  - {fileID: 1208918411210588456}
+  IsStream: 0
+  Is3D: 1
+  IsOneShot: 1
+  Parameters: []
+  MinDistance: 1
+  MaxDistance: 10
+  Length: 1100
 --- !u!114 &-8359276282290943076
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27,6 +54,33 @@ MonoBehaviour:
   MinDistance: 0.8
   MaxDistance: 15
   Length: 20000
+--- !u!114 &-4030359568017232012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceb653cd98e289a4e8697a1af55201f2, type: 3}
+  m_Name: event:/BackgroundAmbienceContinous
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorEventRef
+  Path: event:/BackgroundAmbienceContinous
+  Guid:
+    Data1: 359448381
+    Data2: 1120735881
+    Data3: -457967474
+    Data4: 907525853
+  Banks:
+  - {fileID: 1208918411210588456}
+  IsStream: 0
+  Is3D: 1
+  IsOneShot: 0
+  Parameters: []
+  MinDistance: 1
+  MaxDistance: 20
+  Length: 5799
 --- !u!114 &-2961464916472274793
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -69,7 +123,7 @@ MonoBehaviour:
   Path: ../../Main Folder/Projektek/Nova Arcana FMOD/Build/Desktop/Master.bank
   Name: Master
   StudioPath: bank:/Master
-  lastModified: 639181048624910420
+  lastModified: 639185819135932604
   FileSizes:
   - Name: Desktop
     Value: 290464
@@ -89,16 +143,41 @@ MonoBehaviour:
   EditorBanks:
   - {fileID: 3446062505165739191}
   - {fileID: -2709948417836832383}
+  - {fileID: 1208918411210588456}
   EditorEvents:
   - {fileID: -8359276282290943076}
   - {fileID: -2961464916472274793}
+  - {fileID: -8568448894391739652}
+  - {fileID: 4120753827366900654}
+  - {fileID: -4030359568017232012}
+  - {fileID: 7655708453027945147}
   EditorParameters: []
   MasterBanks:
   - {fileID: -2709948417836832383}
   StringsBanks:
   - {fileID: 3446062505165739191}
-  cacheTime: 639181048624920418
+  cacheTime: 639185819135942768
   cacheVersion: 131637
+--- !u!114 &1208918411210588456
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c18180ecb35941f4682ae60107b85b7c, type: 3}
+  m_Name: bank:/Effects.bank
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorBankRef
+  Path: ../../Main Folder/Projektek/Nova Arcana FMOD/Build/Desktop/Effects.bank
+  Name: Effects
+  StudioPath: bank:/Effects
+  lastModified: 639185819135701921
+  FileSizes:
+  - Name: Desktop
+    Value: 103872
+  Exists: 1
 --- !u!114 &3446062505165739191
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -114,8 +193,62 @@ MonoBehaviour:
   Path: ../../Main Folder/Projektek/Nova Arcana FMOD/Build/Desktop/Master.strings.bank
   Name: Master.strings
   StudioPath: bank:/Master.strings
-  lastModified: 639181048624920418
+  lastModified: 639185819135942768
   FileSizes:
   - Name: Desktop
-    Value: 810
+    Value: 1074
   Exists: 1
+--- !u!114 &4120753827366900654
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceb653cd98e289a4e8697a1af55201f2, type: 3}
+  m_Name: event:/DoorOpen
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorEventRef
+  Path: event:/DoorOpen
+  Guid:
+    Data1: 16811430
+    Data2: 1126066967
+    Data3: 1050099388
+    Data4: 1292963107
+  Banks:
+  - {fileID: 1208918411210588456}
+  IsStream: 0
+  Is3D: 1
+  IsOneShot: 1
+  Parameters: []
+  MinDistance: 1
+  MaxDistance: 8
+  Length: 500
+--- !u!114 &7655708453027945147
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceb653cd98e289a4e8697a1af55201f2, type: 3}
+  m_Name: event:/FlashlightToglle
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorEventRef
+  Path: event:/FlashlightToglle
+  Guid:
+    Data1: -248446552
+    Data2: 1082429927
+    Data3: 731930535
+    Data4: -991964612
+  Banks:
+  - {fileID: 1208918411210588456}
+  IsStream: 0
+  Is3D: 1
+  IsOneShot: 1
+  Parameters: []
+  MinDistance: 1
+  MaxDistance: 20
+  Length: 0

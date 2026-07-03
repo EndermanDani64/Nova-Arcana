@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: ScatteredRooms_Dark
+  m_EditorClassIdentifier: Assembly-CSharp::BiomeData
+  biomeType: 1
+  generationChance: 0.1
+  labirynthCount: 10
+  stopCollisionProbability: 0.0001
+  randomFactorForDoors: 1
+  patchIterationCount: 60
+  roomCount: 10
+  roomMinSize: 2
+  roomMaxSize: 3
+  lightChance: 0
+  wallPrefab: {fileID: 5369011571374229315, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
+  debugColor: {r: 0, g: 0.18460202, b: 1, a: 0}

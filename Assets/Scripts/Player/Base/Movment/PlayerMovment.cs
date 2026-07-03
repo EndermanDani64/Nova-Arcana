@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
 using Unity.VisualScripting;
@@ -39,7 +39,7 @@ public class PlayerMovment : MonoBehaviour
 
     private void Update()
     {
-        _isGrounded = Physics.Raycast(transform.position, Vector3.down, playerHeight * .5f + .2f, ground);
+        _isGrounded = Physics.Raycast(transform.position, Vector3.down, playerHeight + .5f, ground);
 
         GetAndUpdateInputValues();
 
