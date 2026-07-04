@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public enum CellType
@@ -35,7 +36,7 @@ public class ACGen : MonoBehaviour
 
     [Space]
 
-    [SerializeField] private BiomeData[] biomes;
+    [SerializeField] public BiomeData[] biomes;
 
     private Dictionary<Biome, BiomeData> _biomeDict;
 
@@ -381,8 +382,8 @@ public class ACGen : MonoBehaviour
                                 if (!cells.ContainsKey(doorwayInFrontOfCheckPos) || cells[doorwayInFrontOfCheckPos].CellType == CellType.Wall || cells[doorwayInFrontOfCheckPos].CellType == CellType.WallDoor)
                                     canGenerateDoor = false;
 
-                                if (Random.value < surroundRoomWithWallChance)
-                                    canGenerateDoor = false;
+                                /*if (Random.value < surroundRoomWithWallChance)
+                                    canGenerateDoor = false;*/
 
                                 if (!canGenerateDoor) // if we can't generate the door, but the small chance succeeds then we place a wall instead
                                 {
@@ -413,7 +414,7 @@ public class ACGen : MonoBehaviour
 
                                     Vector2Int wallOffCheck1 = new Vector2Int(doorwayCheckPos.x + 1, doorwayCheckPos.y);
                                     Vector2Int wallOffCheck2 = new Vector2Int(doorwayCheckPos.x - 1, doorwayCheckPos.y);
-                                    if (cells.ContainsKey(wallOffCheck1) && cells.ContainsKey(wallOffCheck2) && cells[wallOffCheck1].CellType != CellType.Wall && cells[wallOffCheck2].CellType != CellType.Wall)
+                                    if (cells.ContainsKey(wallOffCheck1) && cells.ContainsKey(wallOffCheck2) && cells[wallOffCheck1].CellType != CellType.Wall && cells[wallOffCheck2].CellType != CellType.Wall && cells[wallOffCheck1].CellType != CellType.WallDoor && cells[wallOffCheck2].CellType != CellType.WallDoor)
                                     {
                                         canGenDoor = true;
                                     }
@@ -478,8 +479,8 @@ public class ACGen : MonoBehaviour
                                 Vector2Int doorwayInFrontOfCheckPos = new Vector2Int(roomX - 1, roomY);
                                 if (!cells.ContainsKey(doorwayInFrontOfCheckPos) || cells[doorwayInFrontOfCheckPos].CellType == CellType.Wall || cells[doorwayInFrontOfCheckPos].CellType == CellType.WallDoor) canGenerateDoor = false;
 
-                                if (Random.value < surroundRoomWithWallChance)
-                                    canGenerateDoor = false;
+                                /*if (Random.value < surroundRoomWithWallChance)
+                                    canGenerateDoor = false;*/
 
                                 if (!canGenerateDoor)
                                 {
@@ -510,7 +511,7 @@ public class ACGen : MonoBehaviour
 
                                     Vector2Int wallOffCheck1 = new Vector2Int(doorwayCheckPos.x + 1, doorwayCheckPos.y);
                                     Vector2Int wallOffCheck2 = new Vector2Int(doorwayCheckPos.x - 1, doorwayCheckPos.y);
-                                    if (cells.ContainsKey(wallOffCheck1) && cells.ContainsKey(wallOffCheck2) && cells[wallOffCheck1].CellType != CellType.Wall && cells[wallOffCheck2].CellType != CellType.Wall)
+                                    if (cells.ContainsKey(wallOffCheck1) && cells.ContainsKey(wallOffCheck2) && cells[wallOffCheck1].CellType != CellType.Wall && cells[wallOffCheck2].CellType != CellType.Wall && cells[wallOffCheck1].CellType != CellType.WallDoor && cells[wallOffCheck2].CellType != CellType.WallDoor)
                                     {
                                         canGenDoor = true;
                                     }
@@ -576,8 +577,8 @@ public class ACGen : MonoBehaviour
                                 if (!cells.ContainsKey(doorwayInFrontOfCheckPos) || cells[doorwayInFrontOfCheckPos].CellType == CellType.Wall || cells[doorwayInFrontOfCheckPos].CellType == CellType.WallDoor)
                                     canGenerateDoor = false;
 
-                                if (Random.value < surroundRoomWithWallChance)
-                                    canGenerateDoor = false;
+                                /*if (Random.value < surroundRoomWithWallChance)
+                                    canGenerateDoor = false;*/
 
                                 if (!canGenerateDoor)
                                 {
@@ -608,7 +609,7 @@ public class ACGen : MonoBehaviour
 
                                     Vector2Int wallOffCheck1 = new Vector2Int(doorwayCheckPos.x, doorwayCheckPos.y + 1);
                                     Vector2Int wallOffCheck2 = new Vector2Int(doorwayCheckPos.x, doorwayCheckPos.y - 1);
-                                    if (cells.ContainsKey(wallOffCheck1) && cells.ContainsKey(wallOffCheck2) && cells[wallOffCheck1].CellType != CellType.Wall && cells[wallOffCheck2].CellType != CellType.Wall)
+                                    if (cells.ContainsKey(wallOffCheck1) && cells.ContainsKey(wallOffCheck2) && cells[wallOffCheck1].CellType != CellType.Wall && cells[wallOffCheck2].CellType != CellType.Wall && cells[wallOffCheck1].CellType != CellType.WallDoor && cells[wallOffCheck2].CellType != CellType.WallDoor)
                                     {
                                         canGenDoor = true;
                                     }
@@ -680,8 +681,8 @@ public class ACGen : MonoBehaviour
                                 if (!cells.ContainsKey(doorwayInFrontOfCheckPos) || cells[doorwayInFrontOfCheckPos].CellType == CellType.Wall || cells[doorwayInFrontOfCheckPos].CellType == CellType.WallDoor)
                                     canGenerateDoor = false;
 
-                                if (Random.value < surroundRoomWithWallChance)
-                                    canGenerateDoor = false;
+                                /*if (Random.value < surroundRoomWithWallChance)
+                                    canGenerateDoor = false;*/
 
                                 if (!canGenerateDoor)
                                 {
@@ -712,7 +713,7 @@ public class ACGen : MonoBehaviour
 
                                     Vector2Int wallOffCheck1 = new Vector2Int(doorwayCheckPos.x, doorwayCheckPos.y + 1);
                                     Vector2Int wallOffCheck2 = new Vector2Int(doorwayCheckPos.x, doorwayCheckPos.y - 1);
-                                    if (cells.ContainsKey(wallOffCheck1) && cells.ContainsKey(wallOffCheck2) && cells[wallOffCheck1].CellType != CellType.Wall && cells[wallOffCheck2].CellType != CellType.Wall)
+                                    if (cells.ContainsKey(wallOffCheck1) && cells.ContainsKey(wallOffCheck2) && cells[wallOffCheck1].CellType != CellType.Wall && cells[wallOffCheck2].CellType != CellType.Wall && cells[wallOffCheck1].CellType != CellType.WallDoor && cells[wallOffCheck2].CellType != CellType.WallDoor)
                                     {
                                         canGenDoor = true;
                                     }
@@ -1127,13 +1128,22 @@ public class ACGen : MonoBehaviour
 
         return biomes;
     }
-    private void SetAllBiomeDictionaries()
+    public void SetAllBiomeDictionaries()
     {
-        _biomeDict = new();
-        foreach (var b in biomes)
+        _biomeDict = new Dictionary<Biome, BiomeData>();
+
+        if (biomes.Length <= 0 || _biomeDict == null) return;
+
+        foreach (BiomeData b in biomes)
         {
-            _biomeDict[b.biomeType] = b;
+            _biomeDict.Add(b.biomeType, b);
         }
+    }
+
+    private void Awake()
+    {
+        /*biomes = Resources.LoadAll<BiomeData>("Biomes");
+        SetAllBiomeDictionaries();*/
     }
 
     [Space]

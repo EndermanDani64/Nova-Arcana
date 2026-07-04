@@ -14,7 +14,7 @@ OcclusionCullingSettings:
 RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 10
-  m_Fog: 0
+  m_Fog: 1
   m_FogColor: {r: 0.11320752, g: 0.095633276, b: 0.06140974, a: 1}
   m_FogMode: 3
   m_FogDensity: 0.036
@@ -24,7 +24,7 @@ RenderSettings:
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
   m_AmbientIntensity: 1.17
-  m_AmbientMode: 0
+  m_AmbientMode: 3
   m_SubtractiveShadowColor: {r: 1, g: 0.8133648, b: 0.6839622, a: 1}
   m_SkyboxMaterial: {fileID: 2100000, guid: f11f2d5511c1bd04ca36120e88f50895, type: 2}
   m_HaloStrength: 0.504
@@ -130,6 +130,10 @@ PrefabInstance:
     - target: {fileID: 5369011571374229315, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
       propertyPath: m_Name
       value: Wall (3)
+      objectReference: {fileID: 0}
+    - target: {fileID: 5369011571374229315, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7576378386260096149, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
       propertyPath: m_LocalPosition.x
@@ -538,7 +542,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &291080433
 Transform:
   m_ObjectHideFlags: 0
@@ -599,7 +603,6 @@ GameObject:
   - component: {fileID: 330585548}
   - component: {fileID: 330585549}
   - component: {fileID: 330585550}
-  - component: {fileID: 330585551}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -761,18 +764,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraDoorScript.CameraOpenDoor
   text: {fileID: 1829916489}
---- !u!114 &330585551
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 330585543}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 72ece51f2901e7445ab60da3685d6b5f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineBrain
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -943,6 +934,10 @@ PrefabInstance:
     - target: {fileID: 5369011571374229315, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
       propertyPath: m_Name
       value: Wall (5)
+      objectReference: {fileID: 0}
+    - target: {fileID: 5369011571374229315, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7576378386260096149, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1192,6 +1187,10 @@ PrefabInstance:
     - target: {fileID: 5369011571374229315, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
       propertyPath: m_Name
       value: Wall (7)
+      objectReference: {fileID: 0}
+    - target: {fileID: 5369011571374229315, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7576378386260096149, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1471,6 +1470,10 @@ PrefabInstance:
     - target: {fileID: 5369011571374229315, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
       propertyPath: m_Name
       value: Wall (4)
+      objectReference: {fileID: 0}
+    - target: {fileID: 5369011571374229315, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7576378386260096149, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1808,6 +1811,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Wall
       objectReference: {fileID: 0}
+    - target: {fileID: 5369011571374229315, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7576378386260096149, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.77324575
@@ -2004,6 +2011,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Wall (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 5369011571374229315, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7576378386260096149, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
       propertyPath: m_LocalPosition.x
       value: -2.7732458
@@ -2059,6 +2070,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1176370723}
   - component: {fileID: 1176370724}
+  - component: {fileID: 1176370725}
   m_Layer: 0
   m_Name: ChunkGenerationManager
   m_TagString: Untagged
@@ -2100,7 +2112,38 @@ MonoBehaviour:
   largeChunkSize: 20
   player: {fileID: 284976809}
   worldTracker: {fileID: 2115761678}
-  acgRef: {fileID: 291080434}
+  acgRef: {fileID: 1176370725}
+--- !u!114 &1176370725
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1176370722}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c3154584336f794bbb50860c9fb48ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ACGen
+  center: {x: 0, y: 0}
+  DEV_Part: {fileID: 8715859704831427190, guid: ee047e95ffa1807449b9051d671b51c9, type: 3}
+  labirynthCount: 25
+  roomCount: 14
+  patchIterationCount: 60
+  biomes:
+  - {fileID: 11400000, guid: 4a8c34da847049141b6f9aeefe8a10b9, type: 2}
+  - {fileID: 11400000, guid: ffc9545e510d2b949bd9226507b20351, type: 2}
+  - {fileID: 11400000, guid: d9f575394cea7e546b5abdd3bc5d82fe, type: 2}
+  seed: 0
+  scale: 0.009
+  logicalDoorGenerationDepthSearch: 3
+  surroundRoomWithWallChance: 0.95
+  _wallPart: {fileID: 5369011571374229315, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
+  _ceilingPart: {fileID: 8138144131423986242, guid: 8bbd73b30e138b2438211f3fb23c23fe, type: 3}
+  _lightPart: {fileID: 2315899929426710355, guid: 314faa11598cd254e90fee69466e88fc, type: 3}
+  _doorPart: {fileID: 5080322850394657892, guid: 0d2ade508d1b048488150aae68a485ff, type: 3}
+  worldTracker: {fileID: 2115761678}
+  cgm: {fileID: 1176370724}
 --- !u!1 &1297509495
 GameObject:
   m_ObjectHideFlags: 0
@@ -2377,6 +2420,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Wall (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 5369011571374229315, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7576378386260096149, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
       propertyPath: m_LocalPosition.x
       value: 1.2267542
@@ -2433,6 +2480,10 @@ PrefabInstance:
     - target: {fileID: 5369011571374229315, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
       propertyPath: m_Name
       value: Wall (6)
+      objectReference: {fileID: 0}
+    - target: {fileID: 5369011571374229315, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7576378386260096149, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
       propertyPath: m_LocalPosition.x
@@ -2569,7 +2620,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 22400762, guid: 67117722a812a2e46ab8cb8eafbf5f5e, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.000011444092
+      value: 0.000034332275
       objectReference: {fileID: 0}
     - target: {fileID: 22426080, guid: 67117722a812a2e46ab8cb8eafbf5f5e, type: 3}
       propertyPath: m_AnchorMax.x

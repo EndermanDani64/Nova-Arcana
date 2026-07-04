@@ -9,18 +9,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
-  m_Name: SemiOpenSpaces
+  m_Script: {fileID: 11500000, guid: a40e32806c4e1384293619f0677b9ca0, type: 3}
+  m_Name: ScatteredRooms_Lit
   m_EditorClassIdentifier: Assembly-CSharp::BiomeData
-  biomeType: 2
-  generationChance: 1
-  labirynthCount: 6
-  stopCollisionProbability: 0.0001
+  biomeType: 0
+  generationChance: 0.45
+  labirynthCount: 5
+  stopCollisionProbability: 0.0005
   randomFactorForDoors: 1
-  patchIterationCount: 80
-  roomCount: 16
+  patchIterationCount: 60
+  roomCount: 10
   roomMinSize: 4
   roomMaxSize: 6
   lightChance: 1
   wallPrefab: {fileID: 0}
-  debugColor: {r: 0, g: 0.7830189, b: 0.105995506, a: 0}
+  debugColor: {r: 1, g: 0.4933104, b: 0, a: 0}

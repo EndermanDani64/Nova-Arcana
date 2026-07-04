@@ -1,29 +1,31 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 [CreateAssetMenu(menuName = "Backrooms/BiomeData")]
+[Serializable]
 public class BiomeData : ScriptableObject
 {
     public Biome biomeType;
 
     [Header("Generálás")]
-    public float generationChance;
-    public int labirynthCount;
-    public float stopCollisionProbability;
-    public float randomFactorForDoors;
-    public int patchIterationCount;
+    [SerializeField] public float generationChance;
+    [SerializeField] public int labirynthCount;
+    [SerializeField] public float stopCollisionProbability;
+    [SerializeField] public float randomFactorForDoors;
+    [SerializeField] public int patchIterationCount;
 
     [Header("Szobák")]
-    public int roomCount;
-    public int roomMinSize;
-    public int roomMaxSize;
+    [SerializeField] public int roomCount;
+    [SerializeField] public int roomMinSize;
+    [SerializeField] public int roomMaxSize;
 
     [Header("Lighting")]
-    public float lightChance;
+    [SerializeField] public float lightChance;
 
     [Header("Vizuális")]
     //public Material wallMaterial;
-    public GameObject wallPrefab;
+    [SerializeField] public GameObject wallPrefab;
 
     [Header("Debug")]
-    public Color debugColor;
+    [SerializeField] public Color debugColor;
 }
