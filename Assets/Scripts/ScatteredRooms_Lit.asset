@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: ScatteredRooms_Lit
   m_EditorClassIdentifier: Assembly-CSharp::BiomeData
   biomeType: 0
-  generationChance: 0.54
+  generationChance: 0.45
   labirynthCount: 5
   stopCollisionProbability: 0.0005
   randomFactorForDoors: 1

@@ -13,14 +13,14 @@ MonoBehaviour:
   m_Name: ScatteredRooms_Dark
   m_EditorClassIdentifier: Assembly-CSharp::BiomeData
   biomeType: 1
-  generationChance: 0.1
-  labirynthCount: 10
-  stopCollisionProbability: 0.0001
+  generationChance: 0.3
+  labirynthCount: 8
+  stopCollisionProbability: 0.001
   randomFactorForDoors: 1
   patchIterationCount: 60
-  roomCount: 10
+  roomCount: 5
   roomMinSize: 2
-  roomMaxSize: 3
+  roomMaxSize: 4
   lightChance: 0
-  wallPrefab: {fileID: 5369011571374229315, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
-  debugColor: {r: 0, g: 0.18460202, b: 1, a: 0}
+  wallPrefab: {fileID: 0}
+  debugColor: {r: 0, g: 0, b: 0, a: 0}

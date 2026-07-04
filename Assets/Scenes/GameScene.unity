@@ -578,7 +578,7 @@ MonoBehaviour:
   seed: 0
   scale: 0.009
   logicalDoorGenerationDepthSearch: 3
-  surroundRoomWithWallChance: 0.8
+  surroundRoomWithWallChance: 0.95
   _wallPart: {fileID: 5369011571374229315, guid: 8f2ea39e7ec5af24ca8ffb99a9040c62, type: 3}
   _ceilingPart: {fileID: 8138144131423986242, guid: 8bbd73b30e138b2438211f3fb23c23fe, type: 3}
   _lightPart: {fileID: 2315899929426710355, guid: 314faa11598cd254e90fee69466e88fc, type: 3}
@@ -2569,7 +2569,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 22400762, guid: 67117722a812a2e46ab8cb8eafbf5f5e, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.000034332275
+      value: 0.000011444092
       objectReference: {fileID: 0}
     - target: {fileID: 22426080, guid: 67117722a812a2e46ab8cb8eafbf5f5e, type: 3}
       propertyPath: m_AnchorMax.x

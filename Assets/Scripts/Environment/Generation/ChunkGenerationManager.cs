@@ -15,6 +15,9 @@ public class ChunkGenerationManager : MonoBehaviour
     public Dictionary<Vector2Int, SmallChunk> smallChunks;
     public Dictionary<Vector2Int, LargeChunk> largeChunks;
     public Dictionary<Vector2Int, SmallChunk> activeRooms;
+    /// <summary>
+    /// indexPos
+    /// </summary>
     public Dictionary<Vector2Int, Cell> cellWorld;
 
     public int largeChunkRenderDistance; // ha jól tudom tényleg large chunkokkal foglalkozik, de az átnevezés csak egy tipp. eredeti: renderDistance
@@ -22,7 +25,7 @@ public class ChunkGenerationManager : MonoBehaviour
     [Space]
     public int cellSize;
     public int smallChunkSize;
-    public int largeChunkSize; 
+    public int largeChunkSize;
 
     private void Start()
     {
@@ -36,7 +39,7 @@ public class ChunkGenerationManager : MonoBehaviour
 
         GenerateNewChunks();
 
-        worldTracker.playerLargeChunkPosChanged += GenerateNewChunks; 
+        worldTracker.playerLargeChunkPosChanged += GenerateNewChunks;
         worldTracker.playerSmallChunkPosChanged += ManageSmallChunkVisibility;
     }
 
@@ -61,9 +64,9 @@ public class ChunkGenerationManager : MonoBehaviour
     {
         yield return acgRef.StartCoroutine(acgRef.FillWithWalls(chunk));
         yield return acgRef.StartCoroutine(acgRef.GenerateMap(chunk));
-        //yield return acgRef.StartCoroutine(acgRef.GenerateRooms(chunk));
+        yield return acgRef.StartCoroutine(acgRef.GenerateRooms(chunk));
         yield return acgRef.StartCoroutine(acgRef.MakePatches(chunk));
-        //yield return acgRef.StartCoroutine(acgRef.OptimiseWalls(chunk));
+        yield return acgRef.StartCoroutine(acgRef.OptimiseWalls(chunk));
 
         //areas.Add(acgRef.MakeArea(this));
     }
@@ -73,11 +76,11 @@ public class ChunkGenerationManager : MonoBehaviour
         StartCoroutine(GenerateNewChunksIfNeeded()); // StartCoroutine(GenerateNewChunksIfNeeded());
     }
 
-    private IEnumerator GenerateNewChunksIfNeeded() 
+    private IEnumerator GenerateNewChunksIfNeeded()
     {
         // játékos + 1 körös gyűrű
         for (int x = -largeChunkRenderDistance; x <= largeChunkRenderDistance; x++)
-        {   
+        {
             for (int y = -largeChunkRenderDistance; y <= largeChunkRenderDistance; y++)
             {
                 Vector2Int currentLargeChunkIndexPos = worldTracker.playerLargeChunkPosition + new Vector2Int(x, y);
@@ -224,7 +227,7 @@ public class SmallChunk
         foreach (KeyValuePair<Vector2Int, Cell> pair in cells)
         {
             if (pair.Value.CellType != CellType.Wall && pair.Value.CellType != CellType.LightEmpty) continue;
-            
+
             pair.Value.wallGameObject = _parentChunkRef.acgRef.CreateCellGameObject(pair.Key, pair.Value.CellType);
             pair.Value.wallGameObject.transform.position = new Vector3(pair.Value.WorldPosition.x /** _parentChunkRef.cgmRef.cellSize*/, 1, pair.Value.WorldPosition.y /** _parentChunkRef.cgmRef.cellSize*/);
         }
@@ -311,7 +314,7 @@ public class LargeChunk
                 );
 
                 if (smallChunks.ContainsKey(currentSmallChunkIndexPos)/* || 
-                    Vector2Int.Distance(currentSmallChunkIndexPos * cgmRef.smallChunkSize, tracker.playerSmallChunkPosition) > cgmRef.smallChunkRenderDistance*/) 
+                    Vector2Int.Distance(currentSmallChunkIndexPos * cgmRef.smallChunkSize, tracker.playerSmallChunkPosition) > cgmRef.smallChunkRenderDistance*/)
                     continue;
 
                 SmallChunk newSmallChunk = new SmallChunk(this, cgmRef, currentSmallChunkIndexPos, currentWorldPos);
