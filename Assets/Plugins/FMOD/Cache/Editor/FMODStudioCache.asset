@@ -123,7 +123,7 @@ MonoBehaviour:
   Path: ../../Main Folder/Projektek/Nova Arcana FMOD/Build/Desktop/Master.bank
   Name: Master
   StudioPath: bank:/Master
-  lastModified: 639185819135932604
+  lastModified: 639188590326701630
   FileSizes:
   - Name: Desktop
     Value: 290464
@@ -156,7 +156,7 @@ MonoBehaviour:
   - {fileID: -2709948417836832383}
   StringsBanks:
   - {fileID: 3446062505165739191}
-  cacheTime: 639185819135942768
+  cacheTime: 639188590326724303
   cacheVersion: 131637
 --- !u!114 &1208918411210588456
 MonoBehaviour:
@@ -173,7 +173,7 @@ MonoBehaviour:
   Path: ../../Main Folder/Projektek/Nova Arcana FMOD/Build/Desktop/Effects.bank
   Name: Effects
   StudioPath: bank:/Effects
-  lastModified: 639185819135701921
+  lastModified: 639188590312951125
   FileSizes:
   - Name: Desktop
     Value: 103872
@@ -193,7 +193,7 @@ MonoBehaviour:
   Path: ../../Main Folder/Projektek/Nova Arcana FMOD/Build/Desktop/Master.strings.bank
   Name: Master.strings
   StudioPath: bank:/Master.strings
-  lastModified: 639185819135942768
+  lastModified: 639188590326724303
   FileSizes:
   - Name: Desktop
     Value: 1074

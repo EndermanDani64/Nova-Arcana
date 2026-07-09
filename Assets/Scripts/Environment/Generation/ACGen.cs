@@ -59,8 +59,8 @@ public class ACGen : MonoBehaviour
     public int seed = 0;
     public float scale;
 
-    [SerializeField] private int logicalDoorGenerationDepthSearch = 3;
-    [SerializeField] private float surroundRoomWithWallChance = 0f;
+    [SerializeField] private int logicalDoorGenerationDepthSearch = 0;
+    [SerializeField] private float surroundRoomWithWallChance = .6f;
 
     private void Start()
     {
@@ -97,14 +97,14 @@ public class ACGen : MonoBehaviour
             if (!visitedCells.Contains(parentPos))
                 visitedCells.Add(parentPos);
 
-            // generate walkable area
-
             if (!cells.ContainsKey(parentPos)) continue;
+
+            // generate walkable area
 
             cells[parentPos].CellType = CellType.HallwayEmpty;
             Destroy(cells[parentPos].wallGameObject); // GENERATE FLOOR!!! IF WALKABLE/ EMPTY
 
-            if (Random.value < _biomeDict[currentBiome].lightChance && parentPos.x % 4 == 0 && parentPos.y % 4 == 0)
+            if (Random.value < _biomeDict[currentBiome].lightChance/* && parentPos.x % 4 == 0 && parentPos.y % 4 == 0*/)
             {
                 cells[parentPos].lightGameObject = Instantiate(_lightPart);
                 cells[parentPos].lightGameObject.transform.position = new Vector3(
@@ -125,10 +125,82 @@ public class ACGen : MonoBehaviour
                 frontier.Add(childP, parentPos);
             }
 
+            int forwardCells = 0;
+            char direction = 'x';
+
             while (frontier.Count > 0)
             {
                 int randChoice = Random.Range(0, frontier.Count - 1);
                 Vector2Int childPos = frontier.ElementAt(randChoice).Key;
+
+                /*if (forwardCells < 4)
+                {
+                    if (direction == 'x')
+                    {
+                        int attempts = 0;
+                        while (frontier[childPos].x != childPos.x && attempts < frontier.Count)
+                        {
+                            randChoice = Random.Range(0, frontier.Count - 1);
+                            childPos = frontier.ElementAt(randChoice).Key;
+                            attempts++;
+                        }
+                    }
+                    else if (direction == 'y')
+                    {
+                        int attempts = 0;
+                        while (frontier[childPos].y != childPos.y && attempts < frontier.Count)
+                        {
+                            randChoice = Random.Range(0, frontier.Count - 1);
+                            childPos = frontier.ElementAt(randChoice).Key;
+                            attempts++;
+                        }
+                    }
+                }
+                else
+                {
+                    if (frontier[childPos].x > childPos.x || frontier[childPos].x < childPos.x)
+                    {
+                        direction = 'y';
+                        forwardCells = 0;
+                    }
+                    else if (frontier[childPos].y > childPos.y || frontier[childPos].y < childPos.y)
+                    {
+                        direction = 'x';
+                        forwardCells = 0;
+                    }
+                }*/
+
+                Vector2Int currentDir = Vector2Int.zero;
+
+                if (parentPos.x == childPos.x && parentPos.y == childPos.y)
+                    currentDir = new Vector2Int(0, 0);
+                else if (parentPos.x > childPos.x && parentPos.y == childPos.y)
+                    currentDir = new Vector2Int(1, 0);
+                else if (parentPos.x > childPos.x && parentPos.y > childPos.y)
+                    currentDir = new Vector2Int(1, 1);
+                else if (parentPos.x > childPos.x && parentPos.y < childPos.y)
+                    currentDir = new Vector2Int(1, -1);
+                else if (parentPos.x < childPos.x && parentPos.y == childPos.y)
+                    currentDir = new Vector2Int(-1, 0);
+                else if (parentPos.x < childPos.x && parentPos.y > childPos.y)
+                    currentDir = new Vector2Int(-1, 1);
+                else if (parentPos.x < childPos.x && parentPos.y < childPos.y)
+                    currentDir = new Vector2Int(-1, -1);
+
+                List<Vector2Int> sameDirectionCandidates = frontier
+                   .Where(kvp =>
+                   {
+                       Vector2Int diff = kvp.Key - kvp.Value; // child - parent = irány
+                       return (diff.x != 0) == (currentDir.x != 0); // ugyanaz a tengely
+                   })
+                   .Select(kvp => kvp.Key)
+                   .ToList();
+
+                if (forwardCells < 10 && sameDirectionCandidates.Count > 0)
+                    childPos = sameDirectionCandidates[Random.Range(0, sameDirectionCandidates.Count)];
+                else
+                    childPos = frontier.ElementAt(Random.Range(0, frontier.Count - 1)).Key;
+
 
                 if (Random.value < _biomeDict[currentBiome].stopCollisionProbability)
                 {
@@ -259,14 +331,21 @@ public class ACGen : MonoBehaviour
 
     public IEnumerator OptimiseWalls(LargeChunk targetLargeChunk)
     {
+        List<Cell> cellsToDestroy = new();
+
         foreach (KeyValuePair<Vector2Int, Cell> pair in targetLargeChunk.cells)
         {
             Cell currentCell = pair.Value;
 
-            if (currentCell.CellType != CellType.Wall || GetWallNeighbors(pair.Key, targetLargeChunk).Count < 4 || currentCell.wallGameObject == null) continue;
+            if (currentCell.CellType != CellType.Wall || GetWallNeighbors(pair.Key, targetLargeChunk).Count < 4 || currentCell.wallGameObject == null || cellsToDestroy.Contains(currentCell)) continue;
 
-            Destroy(currentCell.wallGameObject);
-            currentCell.CellType = CellType.OptimizedWall;
+            cellsToDestroy.Add(currentCell);
+        }
+
+        foreach (Cell c in cellsToDestroy)
+        {
+            Destroy(c.wallGameObject);
+            c.CellType = CellType.OptimizedWall;
         }
 
         yield return null;
@@ -331,9 +410,9 @@ public class ACGen : MonoBehaviour
 
                 //Debug.Log($"centerPosition: {centerPos}, roomSizeX: {roomSizeX}, Y: {roomSizeY}");
 
-                for (int roomX = centerPos.x - (roomSizeX / 2); roomX < centerPos.x + (roomSizeX / 2); roomX++)
+                for (int roomX = centerPos.x - (roomSizeX / 2) /*+ 1*/; roomX < centerPos.x + (roomSizeX / 2) /*- 1*/; roomX++)
                 {
-                    for (int roomY = centerPos.y - (roomSizeY / 2); roomY < centerPos.y + (roomSizeY / 2); roomY++)
+                    for (int roomY = centerPos.y - (roomSizeY / 2) /*+ 1*/; roomY < centerPos.y + (roomSizeY / 2) /*- 1*/; roomY++)
                     {
                         Vector2Int roomPos = new Vector2Int(roomX, roomY);
 
@@ -344,15 +423,31 @@ public class ACGen : MonoBehaviour
                         cells[roomPos].CellType = CellType.RoomEmpty;
                         Destroy(cells[roomPos].wallGameObject);
 
-                        if (roomPos.x % 4 == 0 && roomPos.y % 4 == 0)
+                        if (roomPos.x % 2 == 0 && roomPos.y % 2 == 0 && Random.value < _biomeDict[currentBiome].lightChance)
                         {
-                            cells[roomPos].CellType = CellType.LightEmpty;
-                            cells[roomPos].lightGameObject = Instantiate(_lightPart);
-                            cells[roomPos].lightGameObject.transform.position = new Vector3(
-                                cells[roomPos].WorldPosition.x,
-                                1,
-                                cells[roomPos].WorldPosition.y
-                            );
+                            bool canGen = true;
+
+                            foreach (var pos in GetNeighbors(cells[roomPos].WorldPosition, cells))
+                            {
+                                if (!cells.ContainsKey(pos)) continue;
+
+                                if (cells[pos].CellType == CellType.LightEmpty)
+                                {
+                                    canGen = false;
+                                    break;
+                                }
+                            }
+
+                            if (canGen)
+                            {
+                                cells[roomPos].CellType = CellType.LightEmpty;
+                                cells[roomPos].lightGameObject = Instantiate(_lightPart);
+                                cells[roomPos].lightGameObject.transform.position = new Vector3(
+                                    cells[roomPos].WorldPosition.x,
+                                    1,
+                                    cells[roomPos].WorldPosition.y
+                                );
+                            }
                         }
 
                         if (roomX == centerPos.x - roomSizeX / 2)
@@ -368,11 +463,8 @@ public class ACGen : MonoBehaviour
                                 {
                                     Vector2Int doorwayBehindCheckPos = new Vector2Int(roomX - i, roomY);
 
-                                    if (!cells.ContainsKey(doorwayBehindCheckPos) || cells[doorwayBehindCheckPos].CellType != CellType.HallwayEmpty)
-                                    {
-                                        Debug.LogWarning("not good alta");
+                                    if (!cells.ContainsKey(doorwayBehindCheckPos) || cells[doorwayBehindCheckPos].CellType != CellType.HallwayEmpty) 
                                         break;
-                                    }
 
                                     if (i == logicalDoorGenerationDepthSearch - 1)
                                         canGenerateDoor = true;
@@ -382,8 +474,8 @@ public class ACGen : MonoBehaviour
                                 if (!cells.ContainsKey(doorwayInFrontOfCheckPos) || cells[doorwayInFrontOfCheckPos].CellType == CellType.Wall || cells[doorwayInFrontOfCheckPos].CellType == CellType.WallDoor)
                                     canGenerateDoor = false;
 
-                                /*if (Random.value < surroundRoomWithWallChance)
-                                    canGenerateDoor = false;*/
+                                if (Random.value < surroundRoomWithWallChance)
+                                    canGenerateDoor = false;
 
                                 if (!canGenerateDoor) // if we can't generate the door, but the small chance succeeds then we place a wall instead
                                 {
@@ -404,8 +496,8 @@ public class ACGen : MonoBehaviour
 
                                         if (cells[doorwayCheckPos].lightGameObject != null) Destroy(cells[doorwayCheckPos].lightGameObject);
 
-                                        GameObject tempGm = Instantiate(DEV_Part);
-                                        tempGm.transform.position = new Vector3(cells[doorwayCheckPos].WorldPosition.x, 5, cells[doorwayCheckPos].WorldPosition.y);
+                                        /*GameObject tempGm = Instantiate(DEV_Part);
+                                        tempGm.transform.position = new Vector3(cells[doorwayCheckPos].WorldPosition.x, 5, cells[doorwayCheckPos].WorldPosition.y);*/
                                     }
                                 }
                                 else
@@ -424,6 +516,7 @@ public class ACGen : MonoBehaviour
                                         cells[doorwayCheckPos].CellType = CellType.WallDoor;
                                         cells[doorwayCheckPos].doorGameObject = Instantiate(_doorPart);
                                         cells[doorwayCheckPos].doorGameObject.transform.position = new Vector3(cells[doorwayCheckPos].WorldPosition.x, 1, cells[doorwayCheckPos].WorldPosition.y);
+                                        cells[doorwayCheckPos].doorRotation = cells[doorwayCheckPos].doorGameObject.transform.rotation;
 
                                         if (cells[doorwayCheckPos].lightGameObject != null) Destroy(cells[doorwayCheckPos].lightGameObject);
                                     }
@@ -434,21 +527,34 @@ public class ACGen : MonoBehaviour
 
                                     if (cells.ContainsKey(wallDoorFrame) && cells[wallDoorFrame].CellType != CellType.Wall && cells[wallDoorFrame].CellType != CellType.WallDoor)
                                     {
-                                        cells[wallDoorFrame].CellType = CellType.Wall;
-                                        cells[wallDoorFrame].doorGameObject = Instantiate(_wallPart);
-                                        cells[wallDoorFrame].doorGameObject.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 1, cells[wallDoorFrame].WorldPosition.y);
+                                        wallOffCheck1 = new Vector2Int(wallDoorFrame.x + 1, doorwayCheckPos.y);
+                                        wallOffCheck2 = new Vector2Int(wallDoorFrame.x - 1, doorwayCheckPos.y);
+                                        if (cells.ContainsKey(wallOffCheck1) && cells.ContainsKey(wallOffCheck2) && cells[wallOffCheck1].CellType != CellType.Wall && cells[wallOffCheck2].CellType != CellType.Wall && cells[wallOffCheck1].CellType != CellType.WallDoor && cells[wallOffCheck2].CellType != CellType.WallDoor)
+                                        {
+                                            cells[wallDoorFrame].CellType = CellType.Wall;
+                                            cells[wallDoorFrame].doorGameObject = Instantiate(_wallPart);
+                                            cells[wallDoorFrame].doorGameObject.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 1, cells[wallDoorFrame].WorldPosition.y);
+
+                                            GameObject tempGmee = Instantiate(DEV_Part);
+                                            tempGmee.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 5, cells[wallDoorFrame].WorldPosition.y);
+                                        }
                                     }
 
                                     wallDoorFrame = new Vector2Int(doorwayCheckPos.x, doorwayCheckPos.y + 1);
 
                                     if (cells.ContainsKey(wallDoorFrame) && cells[wallDoorFrame].CellType != CellType.Wall && cells[wallDoorFrame].CellType != CellType.WallDoor)
                                     {
-                                        cells[wallDoorFrame].CellType = CellType.Wall;
-                                        cells[wallDoorFrame].doorGameObject = Instantiate(_wallPart);
-                                        cells[wallDoorFrame].doorGameObject.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 1, cells[wallDoorFrame].WorldPosition.y);
+                                        wallOffCheck1 = new Vector2Int(wallDoorFrame.x + 1, doorwayCheckPos.y);
+                                        wallOffCheck2 = new Vector2Int(wallDoorFrame.x - 1, doorwayCheckPos.y);
+                                        if (cells.ContainsKey(wallOffCheck1) && cells.ContainsKey(wallOffCheck2) && cells[wallOffCheck1].CellType != CellType.Wall && cells[wallOffCheck2].CellType != CellType.Wall && cells[wallOffCheck1].CellType != CellType.WallDoor && cells[wallOffCheck2].CellType != CellType.WallDoor)
+                                        {
+                                            cells[wallDoorFrame].CellType = CellType.Wall;
+                                            cells[wallDoorFrame].doorGameObject = Instantiate(_wallPart);
+                                            cells[wallDoorFrame].doorGameObject.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 1, cells[wallDoorFrame].WorldPosition.y);
 
-                                        GameObject tempGmee = Instantiate(DEV_Part);
-                                        tempGmee.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 5, cells[wallDoorFrame].WorldPosition.y);
+                                            GameObject tempGmee = Instantiate(DEV_Part);
+                                            tempGmee.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 5, cells[wallDoorFrame].WorldPosition.y);
+                                        }
                                     }
 
 
@@ -479,8 +585,8 @@ public class ACGen : MonoBehaviour
                                 Vector2Int doorwayInFrontOfCheckPos = new Vector2Int(roomX - 1, roomY);
                                 if (!cells.ContainsKey(doorwayInFrontOfCheckPos) || cells[doorwayInFrontOfCheckPos].CellType == CellType.Wall || cells[doorwayInFrontOfCheckPos].CellType == CellType.WallDoor) canGenerateDoor = false;
 
-                                /*if (Random.value < surroundRoomWithWallChance)
-                                    canGenerateDoor = false;*/
+                                if (Random.value < surroundRoomWithWallChance)
+                                    canGenerateDoor = false;
 
                                 if (!canGenerateDoor)
                                 {
@@ -498,11 +604,12 @@ public class ACGen : MonoBehaviour
                                         cells[doorwayCheckPos].CellType = CellType.Wall;
                                         cells[doorwayCheckPos].wallGameObject = Instantiate(_wallPart);
                                         cells[doorwayCheckPos].wallGameObject.transform.position = new Vector3(cells[doorwayCheckPos].WorldPosition.x, 1, cells[doorwayCheckPos].WorldPosition.y);
+                                        cells[doorwayCheckPos].doorRotation = cells[doorwayCheckPos].wallGameObject.transform.rotation;
 
                                         if (cells[doorwayCheckPos].lightGameObject != null) Destroy(cells[doorwayCheckPos].lightGameObject);
 
-                                        GameObject tempGm = Instantiate(DEV_Part);
-                                        tempGm.transform.position = new Vector3(cells[doorwayCheckPos].WorldPosition.x, 5, cells[doorwayCheckPos].WorldPosition.y);
+                                        /*GameObject tempGm = Instantiate(DEV_Part);
+                                        tempGm.transform.position = new Vector3(cells[doorwayCheckPos].WorldPosition.x, 5, cells[doorwayCheckPos].WorldPosition.y);*/
                                     }
                                 }
                                 else
@@ -531,21 +638,34 @@ public class ACGen : MonoBehaviour
 
                                     if (cells.ContainsKey(wallDoorFrame) && cells[wallDoorFrame].CellType != CellType.Wall && cells[wallDoorFrame].CellType != CellType.WallDoor)
                                     {
-                                        cells[wallDoorFrame].CellType = CellType.Wall;
-                                        cells[wallDoorFrame].doorGameObject = Instantiate(_wallPart);
-                                        cells[wallDoorFrame].doorGameObject.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 1, cells[wallDoorFrame].WorldPosition.y);
+                                        wallOffCheck1 = new Vector2Int(wallDoorFrame.x + 1, doorwayCheckPos.y);
+                                        wallOffCheck2 = new Vector2Int(wallDoorFrame.x - 1, doorwayCheckPos.y);
+                                        if (cells.ContainsKey(wallOffCheck1) && cells.ContainsKey(wallOffCheck2) && cells[wallOffCheck1].CellType != CellType.Wall && cells[wallOffCheck2].CellType != CellType.Wall && cells[wallOffCheck1].CellType != CellType.WallDoor && cells[wallOffCheck2].CellType != CellType.WallDoor)
+                                        {
+                                            cells[wallDoorFrame].CellType = CellType.Wall;
+                                            cells[wallDoorFrame].doorGameObject = Instantiate(_wallPart);
+                                            cells[wallDoorFrame].doorGameObject.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 1, cells[wallDoorFrame].WorldPosition.y);
+
+                                            /*GameObject tempGmee = Instantiate(DEV_Part);
+                                            tempGmee.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 5, cells[wallDoorFrame].WorldPosition.y);*/
+                                        }
                                     }
 
                                     wallDoorFrame = new Vector2Int(doorwayCheckPos.x, doorwayCheckPos.y + 1);
 
                                     if (cells.ContainsKey(wallDoorFrame) && cells[wallDoorFrame].CellType != CellType.Wall && cells[wallDoorFrame].CellType != CellType.WallDoor)
                                     {
-                                        cells[wallDoorFrame].CellType = CellType.Wall;
-                                        cells[wallDoorFrame].doorGameObject = Instantiate(_wallPart);
-                                        cells[wallDoorFrame].doorGameObject.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 1, cells[wallDoorFrame].WorldPosition.y);
+                                        wallOffCheck1 = new Vector2Int(wallDoorFrame.x + 1, doorwayCheckPos.y);
+                                        wallOffCheck2 = new Vector2Int(wallDoorFrame.x - 1, doorwayCheckPos.y);
+                                        if (cells.ContainsKey(wallOffCheck1) && cells.ContainsKey(wallOffCheck2) && cells[wallOffCheck1].CellType != CellType.Wall && cells[wallOffCheck2].CellType != CellType.Wall && cells[wallOffCheck1].CellType != CellType.WallDoor && cells[wallOffCheck2].CellType != CellType.WallDoor)
+                                        {
+                                            cells[wallDoorFrame].CellType = CellType.Wall;
+                                            cells[wallDoorFrame].doorGameObject = Instantiate(_wallPart);
+                                            cells[wallDoorFrame].doorGameObject.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 1, cells[wallDoorFrame].WorldPosition.y);
 
-                                        GameObject tempGmee = Instantiate(DEV_Part);
-                                        tempGmee.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 5, cells[wallDoorFrame].WorldPosition.y);
+                                            /*GameObject tempGmee = Instantiate(DEV_Part);
+                                            tempGmee.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 5, cells[wallDoorFrame].WorldPosition.y);*/
+                                        }
                                     }
 
 
@@ -577,8 +697,8 @@ public class ACGen : MonoBehaviour
                                 if (!cells.ContainsKey(doorwayInFrontOfCheckPos) || cells[doorwayInFrontOfCheckPos].CellType == CellType.Wall || cells[doorwayInFrontOfCheckPos].CellType == CellType.WallDoor)
                                     canGenerateDoor = false;
 
-                                /*if (Random.value < surroundRoomWithWallChance)
-                                    canGenerateDoor = false;*/
+                                if (Random.value < surroundRoomWithWallChance)
+                                    canGenerateDoor = false;
 
                                 if (!canGenerateDoor)
                                 {
@@ -599,8 +719,8 @@ public class ACGen : MonoBehaviour
 
                                         if (cells[doorwayCheckPos].lightGameObject != null) Destroy(cells[doorwayCheckPos].lightGameObject);
 
-                                        GameObject tempGm = Instantiate(DEV_Part);
-                                        tempGm.transform.position = new Vector3(cells[doorwayCheckPos].WorldPosition.x, 5, cells[doorwayCheckPos].WorldPosition.y);
+                                        /*GameObject tempGm = Instantiate(DEV_Part);
+                                        tempGm.transform.position = new Vector3(cells[doorwayCheckPos].WorldPosition.x, 5, cells[doorwayCheckPos].WorldPosition.y);*/
                                     }
                                 }
                                 else
@@ -625,6 +745,12 @@ public class ACGen : MonoBehaviour
                                                 90f,
                                                 cells[doorwayCheckPos].doorGameObject.transform.rotation.y
                                             );
+                                        cells[doorwayCheckPos].doorRotation =
+                                            Quaternion.Euler(
+                                                cells[doorwayCheckPos].doorGameObject.transform.rotation.x,
+                                                90f,
+                                                cells[doorwayCheckPos].doorGameObject.transform.rotation.y
+                                            );
 
                                         if (cells[doorwayCheckPos].lightGameObject != null) Destroy(cells[doorwayCheckPos].lightGameObject);
                                     }
@@ -635,21 +761,34 @@ public class ACGen : MonoBehaviour
 
                                     if (cells.ContainsKey(wallDoorFrame) && cells[wallDoorFrame].CellType != CellType.Wall && cells[wallDoorFrame].CellType != CellType.WallDoor)
                                     {
-                                        cells[wallDoorFrame].CellType = CellType.Wall;
-                                        cells[wallDoorFrame].doorGameObject = Instantiate(_wallPart);
-                                        cells[wallDoorFrame].doorGameObject.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 1, cells[wallDoorFrame].WorldPosition.y);
+                                        wallOffCheck1 = new Vector2Int(wallDoorFrame.x + 1, doorwayCheckPos.y);
+                                        wallOffCheck2 = new Vector2Int(wallDoorFrame.x - 1, doorwayCheckPos.y);
+                                        if (cells.ContainsKey(wallOffCheck1) && cells.ContainsKey(wallOffCheck2) && cells[wallOffCheck1].CellType != CellType.Wall && cells[wallOffCheck2].CellType != CellType.Wall && cells[wallOffCheck1].CellType != CellType.WallDoor && cells[wallOffCheck2].CellType != CellType.WallDoor)
+                                        {
+                                            cells[wallDoorFrame].CellType = CellType.Wall;
+                                            cells[wallDoorFrame].doorGameObject = Instantiate(_wallPart);
+                                            cells[wallDoorFrame].doorGameObject.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 1, cells[wallDoorFrame].WorldPosition.y);
+
+                                            /*GameObject tempGmee = Instantiate(DEV_Part);
+                                            tempGmee.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 5, cells[wallDoorFrame].WorldPosition.y);*/
+                                        }
                                     }
 
                                     wallDoorFrame = new Vector2Int(doorwayCheckPos.x + 1, doorwayCheckPos.y);
 
                                     if (cells.ContainsKey(wallDoorFrame) && cells[wallDoorFrame].CellType != CellType.Wall && cells[wallDoorFrame].CellType != CellType.WallDoor)
                                     {
-                                        cells[wallDoorFrame].CellType = CellType.Wall;
-                                        cells[wallDoorFrame].doorGameObject = Instantiate(_wallPart);
-                                        cells[wallDoorFrame].doorGameObject.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 1, cells[wallDoorFrame].WorldPosition.y);
+                                        wallOffCheck1 = new Vector2Int(wallDoorFrame.x + 1, doorwayCheckPos.y);
+                                        wallOffCheck2 = new Vector2Int(wallDoorFrame.x - 1, doorwayCheckPos.y);
+                                        if (cells.ContainsKey(wallOffCheck1) && cells.ContainsKey(wallOffCheck2) && cells[wallOffCheck1].CellType != CellType.Wall && cells[wallOffCheck2].CellType != CellType.Wall && cells[wallOffCheck1].CellType != CellType.WallDoor && cells[wallOffCheck2].CellType != CellType.WallDoor)
+                                        {
+                                            cells[wallDoorFrame].CellType = CellType.Wall;
+                                            cells[wallDoorFrame].doorGameObject = Instantiate(_wallPart);
+                                            cells[wallDoorFrame].doorGameObject.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 1, cells[wallDoorFrame].WorldPosition.y);
 
-                                        GameObject tempGmee = Instantiate(DEV_Part);
-                                        tempGmee.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 5, cells[wallDoorFrame].WorldPosition.y);
+                                            /*GameObject tempGmee = Instantiate(DEV_Part);
+                                            tempGmee.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 5, cells[wallDoorFrame].WorldPosition.y);*/
+                                        }
                                     }
 
 
@@ -681,8 +820,8 @@ public class ACGen : MonoBehaviour
                                 if (!cells.ContainsKey(doorwayInFrontOfCheckPos) || cells[doorwayInFrontOfCheckPos].CellType == CellType.Wall || cells[doorwayInFrontOfCheckPos].CellType == CellType.WallDoor)
                                     canGenerateDoor = false;
 
-                                /*if (Random.value < surroundRoomWithWallChance)
-                                    canGenerateDoor = false;*/
+                                if (Random.value < surroundRoomWithWallChance)
+                                    canGenerateDoor = false;
 
                                 if (!canGenerateDoor)
                                 {
@@ -703,8 +842,8 @@ public class ACGen : MonoBehaviour
 
                                         if (cells[doorwayCheckPos].lightGameObject != null) Destroy(cells[doorwayCheckPos].lightGameObject);
 
-                                        GameObject tempGm = Instantiate(DEV_Part);
-                                        tempGm.transform.position = new Vector3(cells[doorwayCheckPos].WorldPosition.x, 5, cells[doorwayCheckPos].WorldPosition.y);
+                                        /*GameObject tempGm = Instantiate(DEV_Part);
+                                        tempGm.transform.position = new Vector3(cells[doorwayCheckPos].WorldPosition.x, 5, cells[doorwayCheckPos].WorldPosition.y);*/
                                     }
                                 }
                                 else
@@ -729,6 +868,12 @@ public class ACGen : MonoBehaviour
                                                 90f,
                                                 cells[doorwayCheckPos].doorGameObject.transform.rotation.y
                                             );
+                                        cells[doorwayCheckPos].doorRotation =
+                                            Quaternion.Euler(
+                                                cells[doorwayCheckPos].doorGameObject.transform.rotation.x,
+                                                90f,
+                                                cells[doorwayCheckPos].doorGameObject.transform.rotation.y
+                                            );
 
                                         if (cells[doorwayCheckPos].lightGameObject != null) Destroy(cells[doorwayCheckPos].lightGameObject);
                                     }
@@ -739,21 +884,34 @@ public class ACGen : MonoBehaviour
 
                                     if (cells.ContainsKey(wallDoorFrame) && cells[wallDoorFrame].CellType != CellType.Wall && cells[wallDoorFrame].CellType != CellType.WallDoor)
                                     {
-                                        cells[wallDoorFrame].CellType = CellType.Wall;
-                                        cells[wallDoorFrame].doorGameObject = Instantiate(_wallPart);
-                                        cells[wallDoorFrame].doorGameObject.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 1, cells[wallDoorFrame].WorldPosition.y);
+                                        wallOffCheck1 = new Vector2Int(wallDoorFrame.x + 1, doorwayCheckPos.y);
+                                        wallOffCheck2 = new Vector2Int(wallDoorFrame.x - 1, doorwayCheckPos.y);
+                                        if (cells.ContainsKey(wallOffCheck1) && cells.ContainsKey(wallOffCheck2) && cells[wallOffCheck1].CellType != CellType.Wall && cells[wallOffCheck2].CellType != CellType.Wall && cells[wallOffCheck1].CellType != CellType.WallDoor && cells[wallOffCheck2].CellType != CellType.WallDoor)
+                                        {
+                                            cells[wallDoorFrame].CellType = CellType.Wall;
+                                            cells[wallDoorFrame].doorGameObject = Instantiate(_wallPart);
+                                            cells[wallDoorFrame].doorGameObject.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 1, cells[wallDoorFrame].WorldPosition.y);
+
+                                            /*GameObject tempGmee = Instantiate(DEV_Part);
+                                            tempGmee.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 5, cells[wallDoorFrame].WorldPosition.y);*/
+                                        }
                                     }
 
                                     wallDoorFrame = new Vector2Int(doorwayCheckPos.x - 1, doorwayCheckPos.y);
 
                                     if (cells.ContainsKey(wallDoorFrame) && cells[wallDoorFrame].CellType != CellType.Wall && cells[wallDoorFrame].CellType != CellType.WallDoor)
                                     {
-                                        cells[wallDoorFrame].CellType = CellType.Wall;
-                                        cells[wallDoorFrame].doorGameObject = Instantiate(_wallPart);
-                                        cells[wallDoorFrame].doorGameObject.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 1, cells[wallDoorFrame].WorldPosition.y);
+                                        wallOffCheck1 = new Vector2Int(wallDoorFrame.x + 1, doorwayCheckPos.y);
+                                        wallOffCheck2 = new Vector2Int(wallDoorFrame.x - 1, doorwayCheckPos.y);
+                                        if (cells.ContainsKey(wallOffCheck1) && cells.ContainsKey(wallOffCheck2) && cells[wallOffCheck1].CellType != CellType.Wall && cells[wallOffCheck2].CellType != CellType.Wall && cells[wallOffCheck1].CellType != CellType.WallDoor && cells[wallOffCheck2].CellType != CellType.WallDoor)
+                                        {
+                                            cells[wallDoorFrame].CellType = CellType.Wall;
+                                            cells[wallDoorFrame].doorGameObject = Instantiate(_wallPart);
+                                            cells[wallDoorFrame].doorGameObject.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 1, cells[wallDoorFrame].WorldPosition.y);
 
-                                        GameObject tempGmee = Instantiate(DEV_Part);
-                                        tempGmee.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 5, cells[wallDoorFrame].WorldPosition.y);
+                                            /*GameObject tempGmee = Instantiate(DEV_Part);
+                                            tempGmee.transform.position = new Vector3(cells[wallDoorFrame].WorldPosition.x, 5, cells[wallDoorFrame].WorldPosition.y);*/
+                                        }
                                     }
 
 
@@ -845,12 +1003,11 @@ public class ACGen : MonoBehaviour
                 //noise /= 1 + 0.5f + 0.25f;
                 noise = Mathf.Clamp(noise, 0f, 1f);
 
-                //Debug.Log($"x: {newCell.WorldPosition.x * scale + seed}, z: {newCell.WorldPosition.y * scale + seed}");
+                //Debug.Log($"biomeDict: {_biomeDict.Count}");
 
                 float sum = 0f;
-                foreach (BiomeData biome in _biomeDict.Values.OrderBy(b => b.biomeType).ToList())
+                foreach (BiomeData biome in _biomeDict.Values.OrderBy(b => b.biomeType).ToList()) // IF YOU GET NULL REF ERROR THEN THE NOISE VAULE WAS SMALLER THAN THE SUM => BAD GENERATION CHANCES
                 {
-                    //Debug.Log($"noise: {noise} | generationchance: {pair.Value.generationChance}");
                     sum += biome.generationChance;
                     if (noise < sum)
                     {
@@ -859,7 +1016,7 @@ public class ACGen : MonoBehaviour
                         /*GameObject tempGm = Instantiate(DEV_Part);
                         tempGm.transform.position = new Vector3(newCell.WorldPosition.x, 5, newCell.WorldPosition.y);
                         tempGm.GetComponent<Renderer>().material.color = biome.debugColor;*/
-
+                        
                         break;
                     }
                 }
@@ -1132,11 +1289,16 @@ public class ACGen : MonoBehaviour
     {
         _biomeDict = new Dictionary<Biome, BiomeData>();
 
+        Debug.Log("biomeDict created");
+
         if (biomes.Length <= 0 || _biomeDict == null) return;
+
+        Debug.Log("return passed");
 
         foreach (BiomeData b in biomes)
         {
             _biomeDict.Add(b.biomeType, b);
+            Debug.Log("added biome");
         }
     }
 

@@ -13,14 +13,14 @@ MonoBehaviour:
   m_Name: SemiOpenSpaces
   m_EditorClassIdentifier: Assembly-CSharp::BiomeData
   biomeType: 2
-  generationChance: 1
-  labirynthCount: 6
+  generationChance: 0
+  labirynthCount: 0
   stopCollisionProbability: 0.0001
   randomFactorForDoors: 1
-  patchIterationCount: 80
-  roomCount: 16
-  roomMinSize: 4
-  roomMaxSize: 6
-  lightChance: 1
+  patchIterationCount: 40
+  roomCount: 0
+  roomMinSize: 8
+  roomMaxSize: 14
+  lightChance: 0.5
   wallPrefab: {fileID: 0}
   debugColor: {r: 0, g: 0.7830189, b: 0.105995506, a: 0}

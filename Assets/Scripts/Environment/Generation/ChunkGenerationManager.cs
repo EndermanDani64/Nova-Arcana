@@ -63,8 +63,8 @@ public class ChunkGenerationManager : MonoBehaviour
     public IEnumerator GenerateSequentially(LargeChunk chunk)
     {
         yield return acgRef.StartCoroutine(acgRef.FillWithWalls(chunk));
-        yield return acgRef.StartCoroutine(acgRef.GenerateMap(chunk));
         yield return acgRef.StartCoroutine(acgRef.GenerateRooms(chunk));
+        yield return acgRef.StartCoroutine(acgRef.GenerateMap(chunk));
         yield return acgRef.StartCoroutine(acgRef.MakePatches(chunk));
         yield return acgRef.StartCoroutine(acgRef.OptimiseWalls(chunk));
 
@@ -102,7 +102,7 @@ public class ChunkGenerationManager : MonoBehaviour
                 yield return null;
             }
         }
-        //ManageSmallChunkVisibility();
+        ManageSmallChunkVisibility();
     }
 
     [SerializeField] private Player player;
@@ -118,6 +118,8 @@ public class Cell
     public GameObject doorGameObject;
 
     public Vector2Int WorldPosition;
+
+    public Quaternion doorRotation = new Quaternion(0, 0, 0, 0);
 
     public CellType CellType
     {
@@ -228,8 +230,22 @@ public class SmallChunk
         {
             if (pair.Value.CellType != CellType.Wall && pair.Value.CellType != CellType.LightEmpty) continue;
 
-            pair.Value.wallGameObject = _parentChunkRef.acgRef.CreateCellGameObject(pair.Key, pair.Value.CellType);
-            pair.Value.wallGameObject.transform.position = new Vector3(pair.Value.WorldPosition.x /** _parentChunkRef.cgmRef.cellSize*/, 1, pair.Value.WorldPosition.y /** _parentChunkRef.cgmRef.cellSize*/);
+            if (pair.Value.CellType == CellType.Wall)
+            {
+                pair.Value.wallGameObject = _parentChunkRef.acgRef.CreateCellGameObject(pair.Key, pair.Value.CellType);
+                pair.Value.wallGameObject.transform.position = new Vector3(pair.Value.WorldPosition.x, 1, pair.Value.WorldPosition.y);
+            }
+            else if (pair.Value.CellType == CellType.LightEmpty)
+            {
+                pair.Value.lightGameObject = _parentChunkRef.acgRef.CreateCellGameObject(pair.Key, pair.Value.CellType);
+                pair.Value.lightGameObject.transform.position = new Vector3(pair.Value.WorldPosition.x, 1, pair.Value.WorldPosition.y);
+            }
+            else if (pair.Value.CellType == CellType.WallDoor)
+            {
+                pair.Value.doorGameObject = _parentChunkRef.acgRef.CreateCellGameObject(pair.Key, pair.Value.CellType);
+                pair.Value.doorGameObject.transform.position = new Vector3(pair.Value.WorldPosition.x, 1, pair.Value.WorldPosition.y);
+                pair.Value.doorGameObject.transform.rotation = pair.Value.doorRotation;
+            }
         }
     }
 
@@ -239,13 +255,21 @@ public class SmallChunk
 
         foreach (KeyValuePair<Vector2Int, Cell> pair in cells)
         {
-            if (pair.Value.CellType == CellType.Wall)
+            if (pair.Value.CellType != CellType.Wall && pair.Value.CellType != CellType.LightEmpty && pair.Value.CellType != CellType.WallDoor) continue;
+
+            if (pair.Value.CellType == CellType.Wall || pair.Value.wallGameObject != null)
             {
+                pair.Value.CellType = CellType.Wall;
                 _parentChunkRef.acgRef.DestroyCellGameObject(pair.Value.wallGameObject);
             }
-            if (pair.Value.CellType == CellType.LightEmpty)
+            else if (pair.Value.CellType == CellType.LightEmpty || pair.Value.lightGameObject != null)
             {
-                //Debug.Log("destroyed");
+                pair.Value.CellType = CellType.LightEmpty;
+                _parentChunkRef.acgRef.DestroyCellGameObject(pair.Value.lightGameObject);
+            }
+            else if (pair.Value.CellType == CellType.WallDoor || pair.Value.doorGameObject != null)
+            {
+                pair.Value.CellType = CellType.WallDoor;
                 _parentChunkRef.acgRef.DestroyCellGameObject(pair.Value.lightGameObject);
             }
         }
@@ -377,7 +401,6 @@ public class LargeChunk
 public class Area
 {
     public string biomeName;
-    public BiomeType biomeType;
 
     public int CellCount = 0;
 
@@ -427,10 +450,4 @@ public class Area
     }
 
     private LargeChunk parentChunk;
-}
-
-public enum BiomeType
-{
-    Yellow_Halls,
-    DEV_Halls
 }
