@@ -63,8 +63,8 @@ public class ChunkGenerationManager : MonoBehaviour
     public IEnumerator GenerateSequentially(LargeChunk chunk)
     {
         yield return acgRef.StartCoroutine(acgRef.FillWithWalls(chunk));
-        yield return acgRef.StartCoroutine(acgRef.GenerateRooms(chunk));
         yield return acgRef.StartCoroutine(acgRef.GenerateMap(chunk));
+        yield return acgRef.StartCoroutine(acgRef.GenerateRooms(chunk));
         yield return acgRef.StartCoroutine(acgRef.MakePatches(chunk));
         yield return acgRef.StartCoroutine(acgRef.OptimiseWalls(chunk));
 

@@ -17,14 +17,14 @@ RenderSettings:
   m_Fog: 0
   m_FogColor: {r: 0.2924528, g: 0.23886476, b: 0.15312387, a: 1}
   m_FogMode: 3
-  m_FogDensity: 0.036
+  m_FogDensity: 0.005
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
   m_AmbientSkyColor: {r: 0.2234724, g: 0.19917144, b: 0.064301014, a: 1}
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
   m_AmbientIntensity: 1.17
-  m_AmbientMode: 0
+  m_AmbientMode: 3
   m_SubtractiveShadowColor: {r: 1, g: 0.8133648, b: 0.6839622, a: 1}
   m_SkyboxMaterial: {fileID: 2100000, guid: f11f2d5511c1bd04ca36120e88f50895, type: 2}
   m_HaloStrength: 0.504
@@ -220,7 +220,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 103948520}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9a6610d2e704f1648819acc8d7460285, type: 3}
   m_Name: 
@@ -251,7 +251,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 103948520}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9a6610d2e704f1648819acc8d7460285, type: 3}
   m_Name: 
@@ -2166,7 +2166,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 4a8c34da847049141b6f9aeefe8a10b9, type: 2}
   - {fileID: 11400000, guid: ffc9545e510d2b949bd9226507b20351, type: 2}
   - {fileID: 11400000, guid: d9f575394cea7e546b5abdd3bc5d82fe, type: 2}
-  seed: 0
+  seed: 2694
   scale: 0.009
   logicalDoorGenerationDepthSearch: 3
   surroundRoomWithWallChance: 0.95
