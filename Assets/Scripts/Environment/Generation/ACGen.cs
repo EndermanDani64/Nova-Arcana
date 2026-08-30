@@ -60,7 +60,7 @@ public class ACGen : MonoBehaviour
     public float scale;
 
     [SerializeField] private int logicalDoorGenerationDepthSearch = 0;
-    [SerializeField] private float surroundRoomWithWallChance = .6f;
+    [SerializeField] private float surroundRoomWithWallChance = .4f;
 
     private void Start()
     {

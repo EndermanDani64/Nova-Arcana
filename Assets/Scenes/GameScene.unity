@@ -24,7 +24,7 @@ RenderSettings:
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
   m_AmbientIntensity: 1.17
-  m_AmbientMode: 3
+  m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 1, g: 0.8133648, b: 0.6839622, a: 1}
   m_SkyboxMaterial: {fileID: 2100000, guid: f11f2d5511c1bd04ca36120e88f50895, type: 2}
   m_HaloStrength: 0.504
@@ -2137,8 +2137,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 03baf9a64f1e3c24bb0833d3b6a1b126, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ChunkGenerationManager
-  largeChunkRenderDistance: 4
-  smallChunkRenderDistance: 6
+  largeChunkRenderDistance: 2
+  smallChunkRenderDistance: 4
   cellSize: 2
   smallChunkSize: 8
   largeChunkSize: 20
@@ -2166,7 +2166,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 4a8c34da847049141b6f9aeefe8a10b9, type: 2}
   - {fileID: 11400000, guid: ffc9545e510d2b949bd9226507b20351, type: 2}
   - {fileID: 11400000, guid: d9f575394cea7e546b5abdd3bc5d82fe, type: 2}
-  seed: 2694
+  seed: 2136
   scale: 0.009
   logicalDoorGenerationDepthSearch: 3
   surroundRoomWithWallChance: 0.95
